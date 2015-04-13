@@ -16,7 +16,6 @@ IrrAssimp::~IrrAssimp()
     //dtor
 }
 
-
 irr::scene::IAnimatedMesh* IrrAssimp::getMesh(const io::path& path)
 {
 	scene::IAnimatedMesh* msh = Cache->getMeshByName(path);
@@ -56,6 +55,10 @@ irr::scene::IAnimatedMesh* IrrAssimp::getMesh(const io::path& path)
 
 irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
 {
+    core::stringc dileDir = FileSystem->getFileDir(path);
+
+    Mats.clear();
+
     // Create mesh
     scene::ISkinnedMesh* mesh = Smgr->createSkinnedMesh();
 
@@ -64,6 +67,29 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
 
     if (!pScene)
         return 0;
+
+    for (int i = 0; i < pScene->mNumMaterials; ++i)
+    {
+        Material irrMat;
+        irrMat.id = i;
+        irrMat.material.MaterialType = video::EMT_SOLID;
+
+
+
+        aiMaterial* mat = pScene->mMaterials[i];
+        if (mat->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+        {
+            aiString path;
+            mat->GetTexture(aiTextureType_DIFFUSE, 0, &path);
+
+            if (Smgr->getVideoDriver()->getTexture(path.C_Str()))
+                irrMat.material.setTexture(0, Smgr->getVideoDriver()->getTexture(path.C_Str()));
+            else
+                irrMat.material.setTexture(0, Smgr->getVideoDriver()->getTexture(dileDir + "/" + path.C_Str()));
+        }
+        Mats.push_back(irrMat);
+    }
+
 
     for (int i = 0; i < pScene->mNumMeshes; ++i)
     {
@@ -90,6 +116,13 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
             buffer->Vertices_Standard[j].TCoords.X = uv[j].x;
             buffer->Vertices_Standard[j].TCoords.Y = uv[j].y;
 
+            if (paiMesh->HasNormals())
+            {
+                buffer->Vertices_Standard[j].Normal.X = paiMesh->mNormals[j].x;
+                buffer->Vertices_Standard[j].Normal.Y = paiMesh->mNormals[j].y;
+                buffer->Vertices_Standard[j].Normal.Z = paiMesh->mNormals[j].z;
+            }
+
             buffer->Vertices_Standard[j].Color = irr::video::SColor(255,255,255,255);
         }
 
@@ -106,16 +139,20 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
             buffer->Indices[3*j + 2] = face.mIndices[2];
         }
 
+        buffer->Material = Mats[paiMesh->mMaterialIndex].material;
 
+        /*
         video::SMaterial tmp;
         tmp.MaterialType = video::EMT_SOLID ;
         tmp.DiffuseColor = video::SColor(255,255,255,255);
         tmp.AmbientColor = video::SColor(255,255,255,255);
         tmp.EmissiveColor = video::SColor(255,255,255,255);
-        buffer->Material = tmp;
+        buffer->Material = tmp;*/
 
         buffer->recalculateBoundingBox();
-        Smgr->getMeshManipulator()->recalculateNormals(buffer);
+
+        if (!paiMesh->HasNormals())
+            Smgr->getMeshManipulator()->recalculateNormals(buffer);
     }
 
     mesh->setDirty();

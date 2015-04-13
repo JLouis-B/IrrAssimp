@@ -8,6 +8,12 @@
 #include <assimp/Importer.hpp>
 
 
+struct Material
+{
+    unsigned int id;
+    irr::video::SMaterial material;
+};
+
 class IrrAssimp
 {
     public:
@@ -24,6 +30,8 @@ class IrrAssimp
         irr::scene::IMeshCache* Cache;
         irr::io::IFileSystem* FileSystem;
         irr::scene::ISceneManager* Smgr;
+
+        irr::core::array<Material> Mats;
 };
 
 #endif // IRRASSIMP_H

@@ -168,7 +168,7 @@ int main()
 	*/
 
 	IrrAssimp* assimp = new IrrAssimp(smgr);
-    IAnimatedMesh* mesh = assimp->getMesh("../../media/dwarf.x");
+    IAnimatedMesh* mesh = assimp->getMesh("../../media/ninja.b3d");
 
 
 	//IAnimatedMesh* mesh = smgr->getMesh("../../media/sydney.md2");
@@ -196,7 +196,7 @@ int main()
 	{
 		node->setMaterialFlag(EMF_LIGHTING, false);
 		//node->setMD2Animation(scene::EMAT_STAND);
-		node->setMaterialTexture( 0, driver->getTexture("../../media/dwarf.jpg") );
+		//node->setMaterialTexture( 0, driver->getTexture("../../media/dwarf.jpg") );
 	}
 
 	/*
