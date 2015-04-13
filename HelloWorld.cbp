@@ -49,9 +49,9 @@
 		<Linker>
 			<Add library="Irrlicht" />
 		</Linker>
-		<Unit filename="include/IrrAssimp.h" />
+		<Unit filename="IrrAssimp/IrrAssimp.cpp" />
+		<Unit filename="IrrAssimp/IrrAssimp.h" />
 		<Unit filename="main.cpp" />
-		<Unit filename="src/IrrAssimp.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

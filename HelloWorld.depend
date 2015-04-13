@@ -1,7 +1,7 @@
 # depslib dependency file v1.0
-1428925663 source:c:\users\jean-louis\desktop\libs\irrlicht-1.8.1\irrlicht-1.8.1\examples\irrassimp\main.cpp
+1428966909 source:c:\users\jean-louis\desktop\libs\irrlicht-1.8.1\irrlicht-1.8.1\examples\irrassimp\main.cpp
 	<irrlicht.h>
-	"include/IrrAssimp.h"
+	"IrrAssimp/IrrAssimp.h"
 
 1352128454 c:\users\jean-louis\desktop\libs\irrlicht-1.8.1\irrlicht-1.8.1\include\irrlicht.h
 	"IrrCompileConfig.h"
@@ -1149,4 +1149,13 @@
 	"config.h"
 
 1402765209 c:\users\jean-louis\downloads\assimp-3.1.1-win-binaries\include\assimp\config.h
+
+1428925663 c:\users\jean-louis\desktop\libs\irrlicht-1.8.1\irrlicht-1.8.1\examples\irrassimp\irrassimp\irrassimp.h
+	<irrlicht.h>
+	<assimp/scene.h>
+	<assimp/postprocess.h>
+	<assimp/Importer.hpp>
+
+1428967733 source:c:\users\jean-louis\desktop\libs\irrlicht-1.8.1\irrlicht-1.8.1\examples\irrassimp\irrassimp\irrassimp.cpp
+	"IrrAssimp.h"
 
