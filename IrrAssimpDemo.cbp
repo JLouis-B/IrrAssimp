@@ -2,7 +2,7 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="Irrlicht Example 01 Hello World" />
+		<Option title="IrrAssimpDemo" />
 		<Option pch_mode="0" />
 		<Option compiler="gcc" />
 		<Build>
@@ -32,9 +32,10 @@
 					<Add option="-g" />
 					<Add directory="include" />
 					<Add directory="../../../../../../Downloads/assimp-3.1.1-win-binaries/include" />
+					<Add directory="../../../Assimp3-1-1_MinGW4-8-1_Win32/include" />
 				</Compiler>
 				<Linker>
-					<Add library="..\..\..\..\..\..\Downloads\Assimp3-1-1_MinGW4-8-1_Win32\libassimp.dll.a" />
+					<Add library="..\..\..\Assimp3-1-1_MinGW4-8-1_Win32\libassimp.dll.a" />
 					<Add directory="../../lib/Win32-gcc" />
 				</Linker>
 			</Target>

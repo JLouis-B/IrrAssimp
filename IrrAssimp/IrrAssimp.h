@@ -27,11 +27,19 @@ class IrrAssimp
 
     protected:
     private:
+        void createNode(irr::scene::ISkinnedMesh* mesh, aiNode* node);
+        irr::scene::ISkinnedMesh::SJoint* findJoint (irr::scene::ISkinnedMesh* mesh, irr::core::stringc jointName);
+        aiBone* findAssimpBone (aiMesh* mesh, aiString jointName);
+
+
         irr::scene::IMeshCache* Cache;
         irr::io::IFileSystem* FileSystem;
         irr::scene::ISceneManager* Smgr;
 
         irr::core::array<Material> Mats;
+
+        void computeLocal(irr::scene::ISkinnedMesh* mesh, const aiScene* pScene, irr::scene::ISkinnedMesh::SJoint* joint);
+
 };
 
 #endif // IRRASSIMP_H

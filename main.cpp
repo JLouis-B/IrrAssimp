@@ -15,6 +15,7 @@ using namespace gui;
 #pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
 #endif
 
+#include <iostream>
 
 /*
 This is the main method. We can now use main() on every platform.
@@ -22,7 +23,7 @@ This is the main method. We can now use main() on every platform.
 int main()
 {
 	IrrlichtDevice *device =
-		createDevice( video::EDT_SOFTWARE, dimension2d<u32>(640, 480), 16,
+		createDevice( video::EDT_OPENGL, dimension2d<u32>(640, 480), 16,
 			false, false, false, 0);
 
 	if (!device)
@@ -39,25 +40,34 @@ int main()
 	guienv->addStaticText(L"Hello World! This is the Irrlicht Software renderer!",
 		rect<s32>(10,10,260,22), true);
 
-
+    // The assimp loader is in a separate system and not directly as a meshLoader to give the choice to use Irrlicht or Assimp for mesh loading to the user, in function of the format for example
 	IrrAssimp* assimp = new IrrAssimp(smgr);
-    IAnimatedMesh* mesh = assimp->getMesh("Media/ninja.b3d");
+    IAnimatedMesh* mesh = assimp->getMesh("Media/dwarf.x");
+
+    IAnimatedMesh* meshNoAssimp = smgr->getMesh("Media/dwarf.x");
 
 
 	//IAnimatedMesh* mesh = smgr->getMesh("../../media/sydney.md2");
 
 
-	if (!mesh)
+	if (!mesh || !meshNoAssimp)
 	{
 		device->drop();
 		return 1;
 	}
 
-	IMeshSceneNode* node = smgr->addMeshSceneNode( mesh );
+	IAnimatedMeshSceneNode* node = smgr->addAnimatedMeshSceneNode( mesh );
+	IAnimatedMeshSceneNode* nodeNoAssimp = smgr->addAnimatedMeshSceneNode( meshNoAssimp );
 
-	if (node)
+
+	if (node && nodeNoAssimp)
 	{
+	    //std::cout << "joint count" << node->getJointCount() << std::endl;
 		node->setMaterialFlag(EMF_LIGHTING, false);
+		node->setDebugDataVisible(scene::EDS_SKELETON | scene::EDS_BBOX_ALL);
+
+        nodeNoAssimp->setPosition(core::vector3df(100, 0, 0));
+		nodeNoAssimp->setMaterialFlag(EMF_LIGHTING, false);
 		//node->setMD2Animation(scene::EMAT_STAND);
 		//node->setMaterialTexture( 0, driver->getTexture("../../media/dwarf.jpg") );
 	}
