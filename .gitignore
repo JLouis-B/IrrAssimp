@@ -4,3 +4,8 @@
 # Code::Blocks .depend and .layout
 *.depend
 *.layout
+
+# Visual Studio files
+*.sdf
+*.suo
+
