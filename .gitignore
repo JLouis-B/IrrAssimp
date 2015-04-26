@@ -1,2 +1,6 @@
 # Compiled Object files
 *.o
+
+# Code::Blocks .depend and .layout
+*.depend
+*.layout
