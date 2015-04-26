@@ -29,7 +29,7 @@ class IrrAssimp
     private:
         void createNode(irr::scene::ISkinnedMesh* mesh, aiNode* node);
         irr::scene::ISkinnedMesh::SJoint* findJoint (irr::scene::ISkinnedMesh* mesh, irr::core::stringc jointName);
-        aiBone* findAssimpBone (aiMesh* mesh, aiString jointName);
+        aiNode* findNode (const aiScene* scene, aiString jointName);
 
 
         irr::scene::IMeshCache* Cache;

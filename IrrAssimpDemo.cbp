@@ -33,10 +33,13 @@
 					<Add directory="include" />
 					<Add directory="../../../../../../Downloads/assimp-3.1.1-win-binaries/include" />
 					<Add directory="../../../Assimp3-1-1_MinGW4-8-1_Win32/include" />
+					<Add directory="../../../Desktop/Libs/irrlicht-1.8.1/include" />
+					<Add directory="../../../Downloads/assimp-3.1.1-win-binaries/assimp-3.1.1-win-binaries/include" />
 				</Compiler>
 				<Linker>
-					<Add library="..\..\..\Assimp3-1-1_MinGW4-8-1_Win32\libassimp.dll.a" />
-					<Add directory="../../lib/Win32-gcc" />
+					<Add library="..\..\..\Desktop\Libs\Assimp3-1-1_MinGW4-8-1_Win32\libassimp.dll.a" />
+					<Add library="..\..\..\Desktop\Libs\irrlicht-1.8.1\lib\Win32-gcc\libIrrlicht.a" />
+					<Add directory="../../../Desktop/Libs/irrlicht-1.8.1/lib/Win32-gcc" />
 				</Linker>
 			</Target>
 		</Build>
