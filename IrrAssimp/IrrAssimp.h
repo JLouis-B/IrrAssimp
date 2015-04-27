@@ -31,7 +31,6 @@ class IrrAssimp
         irr::scene::ISkinnedMesh::SJoint* findJoint (irr::scene::ISkinnedMesh* mesh, irr::core::stringc jointName);
         aiNode* findNode (const aiScene* scene, aiString jointName);
 
-
         irr::scene::IMeshCache* Cache;
         irr::io::IFileSystem* FileSystem;
         irr::scene::ISceneManager* Smgr;

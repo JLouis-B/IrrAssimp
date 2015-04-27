@@ -62,7 +62,6 @@ scene::ISkinnedMesh::SJoint* IrrAssimp::findJoint (scene::ISkinnedMesh* mesh, co
     return 0;
 }
 
-
 aiNode* IrrAssimp::findNode (const aiScene* scene, aiString jointName)
 {
     if (scene->mRootNode->mName == jointName)
@@ -168,7 +167,7 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
     // Create mesh
     scene::ISkinnedMesh* mesh = Smgr->createSkinnedMesh();
 
-    for (int i = 0; i < pScene->mNumMaterials; ++i)
+    for (unsigned int i = 0; i < pScene->mNumMaterials; ++i)
     {
         Material irrMat;
         irrMat.id = i;
@@ -187,6 +186,7 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
             else if (FileSystem->existFile(fileDir + "/" + FileSystem->getFileBasename(path.C_Str())))
                 irrMat.material.setTexture(0, Smgr->getVideoDriver()->getTexture(fileDir + "/" + FileSystem->getFileBasename(path.C_Str())));
         }
+
         Mats.push_back(irrMat);
     }
 
@@ -196,7 +196,6 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
     for (unsigned int i = 0; i < pScene->mNumMeshes; ++i)
     {
         //std::cout << "i=" << i << " of " << pScene->mNumMeshes << std::endl;
-
         aiMesh* paiMesh = pScene->mMeshes[i];
 
         scene::SSkinMeshBuffer* buffer = mesh->addMeshBuffer();
@@ -207,34 +206,67 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
         for (unsigned int j = 0; j < paiMesh->mNumVertices; ++j)
         {
             aiVector3D vertex = paiMesh->mVertices[j];
-            const aiVector3D* uv = paiMesh->mTextureCoords[0];
-
 
             buffer->Vertices_Standard[j].Pos.X = vertex.x;
             buffer->Vertices_Standard[j].Pos.Y = vertex.y;
             buffer->Vertices_Standard[j].Pos.Z = vertex.z;
 
             //std::cout << "Coords=" << buffer->Vertices_Standard[j].Pos.X << ", " << buffer->Vertices_Standard[j].Pos.Y << ", " << buffer->Vertices_Standard[j].Pos.Z << std::endl;
+            /*
+            const aiVector3D* uv = paiMesh->mTextureCoords[0];
             if (uv != NULL)
             {
                 buffer->Vertices_Standard[j].TCoords.X = uv[j].x;
                 buffer->Vertices_Standard[j].TCoords.Y = uv[j].y;
             }
-
+            */
 
             if (paiMesh->HasNormals())
             {
-                buffer->Vertices_Standard[j].Normal.X = paiMesh->mNormals[j].x;
-                buffer->Vertices_Standard[j].Normal.Y = paiMesh->mNormals[j].y;
-                buffer->Vertices_Standard[j].Normal.Z = paiMesh->mNormals[j].z;
+                aiVector3D normal = paiMesh->mNormals[j];
+                buffer->Vertices_Standard[j].Normal = core::vector3df(normal.x, normal.y, normal.z);
             }
 
-            buffer->Vertices_Standard[j].Color = irr::video::SColor(255,255,255,255);
+            if (paiMesh->HasVertexColors(0))
+            {
+                aiColor4D color = paiMesh->mColors[0][j] * 255.f;
+                buffer->Vertices_Standard[j].Color = irr::video::SColor(color.a, color.r, color.g, color.b);
+            }
+            else
+            {
+                buffer->Vertices_Standard[j].Color = video::SColor(255, 255, 255, 255);
+            }
+
+            if (paiMesh->GetNumUVChannels() > 0)
+            {
+                const aiVector3D uv = paiMesh->mTextureCoords[0][j];
+                buffer->Vertices_Standard[j].TCoords = core::vector2df(uv.x, uv.y);
+            }
         }
+        if (paiMesh->HasTangentsAndBitangents())
+        {
+            buffer->convertToTangents();
+            for (unsigned int j = 0; j < paiMesh->mNumVertices; ++j)
+            {
+                aiVector3D tangent = paiMesh->mTangents[j];
+                aiVector3D bitangent = paiMesh->mBitangents[j];
+                buffer->Vertices_Tangents[j].Tangent = core::vector3df(tangent.x, tangent.y, tangent.z);
+                buffer->Vertices_Tangents[j].Binormal = core::vector3df(bitangent.x, bitangent.y, bitangent.z);
+            }
+        }
+        if (paiMesh->GetNumUVChannels() > 1)
+        {
+            buffer->convertTo2TCoords();
+            for (unsigned int j = 0; j < paiMesh->mNumVertices; ++j)
+            {
+                const aiVector3D uv = paiMesh->mTextureCoords[0][j];
+                buffer->Vertices_2TCoords[j].TCoords2 = core::vector2df(uv.x, uv.y);
+            }
+        }
+
 
         buffer->Indices.reallocate(paiMesh->mNumFaces * 3);
         buffer->Indices.set_used(paiMesh->mNumFaces * 3);
-
 
         for (unsigned int j = 0; j < paiMesh->mNumFaces; ++j)
         {
@@ -255,6 +287,7 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
         {
             aiBone* bone = paiMesh->mBones[j];
 
+            //std::cout << "Name=" << bone->mName.C_Str() << std::endl;
             scene::ISkinnedMesh::SJoint* joint = findJoint(mesh, core::stringc(bone->mName.C_Str()));
             if (joint == 0)
                 std::cout << "Error, no joint" << std::endl;
@@ -286,7 +319,6 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
             joint->GlobalMatrix = globalBoneMatrix;
             joint->LocalMatrix = globalBoneMatrix;
 
-
             for (unsigned int h = 0; h < bone->mNumWeights; ++h)
             {
                 aiVertexWeight weight = bone->mWeights[h];
@@ -300,13 +332,12 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
     }
 
 
-    // Compute the locals from globals
-    for (int i = 0; i < mesh->getJointCount(); ++i)
+    // Compute the globals from locals
+    for (u32 i = 0; i < mesh->getJointCount(); ++i)
     {
         scene::ISkinnedMesh::SJoint* joint = mesh->getAllJoints()[i];
         computeLocal(mesh, pScene, joint);
     }
-
 
     int frameOffset = 0;
 
@@ -314,16 +345,12 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
     {
         aiAnimation* anim = pScene->mAnimations[i];
 
-        if (anim->mTicksPerSecond != 0)
+        if (anim->mTicksPerSecond != 0.f)
         {
             mesh->setAnimationSpeed(anim->mTicksPerSecond);
-            //std::cout << "Animation speed=" <<  anim->mTicksPerSecond<< std::endl;
         }
 
-
-
         //std::cout << "numChannels : " << anim->mNumChannels << std::endl;
-
         for (unsigned int j = 0; j < anim->mNumChannels; ++j)
         {
             aiNodeAnim* nodeAnim = anim->mChannels[j];
@@ -336,15 +363,12 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
                 scene::ISkinnedMesh::SPositionKey* irrKey = mesh->addPositionKey(joint);
 
                 irrKey->frame = key.mTime + frameOffset;
-                //std::cout << "key.time=" << key.mTime << std::endl;
                 irrKey->position = core::vector3df(key.mValue.x, key.mValue.y, key.mValue.z);
-
             }
             for (unsigned int k = 0; k < nodeAnim->mNumRotationKeys; ++k)
             {
                 aiQuatKey key = nodeAnim->mRotationKeys[k];
                 aiQuaternion assimpQuat = key.mValue;
-                //std::cout << "key.time=" << key.mTime << std::endl;
 
                 core::quaternion quat (-assimpQuat.x, -assimpQuat.y, -assimpQuat.z, assimpQuat.w);
 
@@ -352,8 +376,6 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
 
                 irrKey->frame = key.mTime + frameOffset;
                 irrKey->rotation = quat;
-
-
             }
             for (unsigned int k = 0; k < nodeAnim->mNumScalingKeys; ++k)
             {
@@ -363,13 +385,11 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
 
                 irrKey->frame = key.mTime + frameOffset;
                 irrKey->scale = core::vector3df(key.mValue.x, key.mValue.y, key.mValue.z);
-
             }
 
         }
 
         frameOffset += anim->mDuration;
-        //std::cout << "duration=" << anim->mDuration << std::endl;
     }
 
     mesh->setDirty();
@@ -381,7 +401,6 @@ irr::scene::IAnimatedMesh* IrrAssimp::loadMesh(irr::core::stringc path)
 
 void IrrAssimp::computeLocal(scene::ISkinnedMesh* mesh, const aiScene* pScene, scene::ISkinnedMesh::SJoint* joint)
 {
-
     scene::ISkinnedMesh::SJoint* jointParent = 0;
 
     if(pScene->mRootNode->FindNode(aiString(joint->Name.c_str()))->mParent != NULL)
@@ -392,15 +411,14 @@ void IrrAssimp::computeLocal(scene::ISkinnedMesh* mesh, const aiScene* pScene, s
         if (jointParent->LocalMatrix == jointParent->GlobalMatrix)
             computeLocal(mesh, pScene, jointParent);
 
-        irr::core::matrix4 localParent = jointParent->GlobalMatrix;
-        irr::core::matrix4 invLocalParent;
-        localParent.getInverse(invLocalParent);
+        irr::core::matrix4 globalParent = jointParent->GlobalMatrix;
+        irr::core::matrix4 invGlobalParent;
+        globalParent.getInverse(invGlobalParent);
 
-        joint->LocalMatrix = invLocalParent * joint->GlobalMatrix;
+        joint->LocalMatrix = invGlobalParent * joint->GlobalMatrix;
     }
     else
         ;   //std::cout << "Root ?" << std::endl;
-    // -----------------------------------------------------------------
 }
 
 bool IrrAssimp::isLoadable(irr::core::stringc path)

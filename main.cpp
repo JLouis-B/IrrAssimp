@@ -29,51 +29,45 @@ int main()
 	if (!device)
 		return 1;
 
-	device->setWindowCaption(L"Hello World! - IrrAssimp Demo");
-
+	device->setWindowCaption(L"IrrAssimp Demo");
 
 	IVideoDriver* driver = device->getVideoDriver();
 	ISceneManager* smgr = device->getSceneManager();
 	IGUIEnvironment* guienv = device->getGUIEnvironment();
 
-
-	guienv->addStaticText(L"Hello World! This is the Irrlicht Software renderer!",
+	guienv->addStaticText(L"Hello World! This is the IrrAssimp demo!",
 		rect<s32>(10,10,260,22), true);
 
     // The assimp loader is in a separate system and not directly as a meshLoader to give the choice to use Irrlicht or Assimp for mesh loading to the user, in function of the format for example
 	IrrAssimp* assimp = new IrrAssimp(smgr);
     IAnimatedMesh* mesh = assimp->getMesh("Media/wuson/Testwuson.X");
+    //IAnimatedMesh* meshNoAssimp = smgr->getMesh("Media/ninja.b3d");
 
-    IAnimatedMesh* meshNoAssimp = smgr->getMesh("Media/dwarf.x");
-
-
-	//IAnimatedMesh* mesh = smgr->getMesh("../../media/sydney.md2");
-
-
-	if (!mesh || !meshNoAssimp)
+	if (!mesh /*|| !meshNoAssimp*/)
 	{
 		device->drop();
 		return 1;
 	}
 
 	IAnimatedMeshSceneNode* node = smgr->addAnimatedMeshSceneNode( mesh );
-	IAnimatedMeshSceneNode* nodeNoAssimp = smgr->addAnimatedMeshSceneNode( meshNoAssimp );
+	node->setAnimationSpeed(mesh->getAnimationSpeed()); // Fixed by r5097
+	//IAnimatedMeshSceneNode* nodeNoAssimp = smgr->addAnimatedMeshSceneNode( meshNoAssimp );
 
 
-	if (node && nodeNoAssimp)
+
+	if (node /*&& nodeNoAssimp*/)
 	{
-	    //std::cout << "joint count" << node->getJointCount() << std::endl;
-		node->setMaterialFlag(EMF_LIGHTING, false);
+		//node->setMaterialFlag(EMF_LIGHTING, false);
 		node->setDebugDataVisible(scene::EDS_SKELETON | scene::EDS_BBOX_ALL);
-		node->setScale (core::vector3df(100, 100, 100));
+		node->setScale(core::vector3df(100, 100, 100));
 
-        nodeNoAssimp->setPosition(core::vector3df(100, 0, 0));
-		nodeNoAssimp->setMaterialFlag(EMF_LIGHTING, false);
-		//node->setMD2Animation(scene::EMAT_STAND);
+        //nodeNoAssimp->setPosition(core::vector3df(100, 0, 0));
+		//nodeNoAssimp->setMaterialFlag(EMF_LIGHTING, false);
 		//node->setMaterialTexture( 0, driver->getTexture("../../media/dwarf.jpg") );
 	}
 
-	smgr->addCameraSceneNodeFPS(0);
+	smgr->addCameraSceneNodeFPS();
+	smgr->addLightSceneNode(smgr->getActiveCamera(), core::vector3df(0, 0, 0), video::SColorf(1.0f, 1.0f, 1.0f), 3000.0f);
 
 	while(device->run())
 	{
