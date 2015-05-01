@@ -2,17 +2,13 @@
 #define IRRASSIMP_H
 
 #include <irrlicht.h>
+#include "IrrAssimpExport.h"
+#include "IrrAssimpImport.h"
 
 #include <assimp/scene.h>          // Output data structure
 #include <assimp/postprocess.h>    // Post processing flags
 #include <assimp/Importer.hpp>
 
-
-struct Material
-{
-    unsigned int id;
-    irr::video::SMaterial material;
-};
 
 class IrrAssimp
 {
@@ -21,23 +17,19 @@ class IrrAssimp
         virtual ~IrrAssimp();
 
         irr::scene::IAnimatedMesh* getMesh(const irr::io::path& path);
-        irr::scene::IAnimatedMesh* loadMesh(irr::core::stringc path);
+
+        bool exportMesh(irr::scene::IMesh* mesh, irr::core::stringc format, irr::core::stringc path);
 
         bool isLoadable(irr::core::stringc path);
 
     protected:
     private:
-        void createNode(irr::scene::ISkinnedMesh* mesh, aiNode* node);
-        irr::scene::ISkinnedMesh::SJoint* findJoint (irr::scene::ISkinnedMesh* mesh, irr::core::stringc jointName);
-        aiNode* findNode (const aiScene* scene, aiString jointName);
-
         irr::scene::IMeshCache* Cache;
         irr::io::IFileSystem* FileSystem;
         irr::scene::ISceneManager* Smgr;
 
-        irr::core::array<Material> Mats;
-
-        void computeLocal(irr::scene::ISkinnedMesh* mesh, const aiScene* pScene, irr::scene::ISkinnedMesh::SJoint* joint);
+        IrrAssimpImport* Importer;
+        IrrAssimpExport* Exporter;
 
 };
 
