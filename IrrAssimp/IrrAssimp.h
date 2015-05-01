@@ -5,10 +5,16 @@
 #include "IrrAssimpExport.h"
 #include "IrrAssimpImport.h"
 
-#include <assimp/scene.h>          // Output data structure
-#include <assimp/postprocess.h>    // Post processing flags
-#include <assimp/Importer.hpp>
+class ExportFormat
+{
+    public:
+    irr::core::stringc FileExtension;
+    irr::core::stringc Id;
+    irr::core::stringc Description;
 
+    ExportFormat(irr::core::stringc fileExtension, irr::core::stringc id, irr::core::stringc description)
+    : FileExtension(fileExtension), Id(id), Description(description) {}
+};
 
 class IrrAssimp
 {
@@ -16,11 +22,29 @@ class IrrAssimp
         IrrAssimp(irr::scene::ISceneManager* smgr);
         virtual ~IrrAssimp();
 
+        /*  Get a mesh with Assimp.
+            Like ISceneManager::getMesh, check if the mesh is already in the MeshCache, and if it's not the case, Assimp load it.
+        */
         irr::scene::IAnimatedMesh* getMesh(const irr::io::path& path);
 
+
+        /*  Export a mesh.
+            The "format" parameter correspond to the Assimp format ID.
+            You can get the list via getExportFormats, or for Assimp 3.1.1, you can use the followings :
+            - "collada" for the Collada export
+            - "obj" for Wavefront OBJ
+            - "stl" for STL
+            - "stlb" for STL in binary mode
+            - and "ply" for the PLY format
+        */
         bool exportMesh(irr::scene::IMesh* mesh, irr::core::stringc format, irr::core::stringc path);
 
+        irr::core::array<ExportFormat> getExportFormats();
+
+
+        // Check if the file has a loadable extension
         bool isLoadable(irr::core::stringc path);
+
 
     protected:
     private:

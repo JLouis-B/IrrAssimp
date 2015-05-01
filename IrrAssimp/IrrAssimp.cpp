@@ -62,6 +62,22 @@ irr::scene::IAnimatedMesh* IrrAssimp::getMesh(const io::path& path)
 	return msh;
 }
 
+
+core::array<ExportFormat> IrrAssimp::getExportFormats()
+{
+    core::array<ExportFormat> formats;
+
+    Assimp::Exporter exporter;
+    for (int i = 0; i < exporter.GetExportFormatCount(); ++i)
+    {
+         const aiExportFormatDesc* formatDesc = exporter.GetExportFormatDescription(i);
+         formats.push_back(ExportFormat(formatDesc->fileExtension, formatDesc->id, formatDesc->description));
+    }
+
+    return formats;
+}
+
+
 bool IrrAssimp::isLoadable(irr::core::stringc path)
 {
     Assimp::Importer Importer;
