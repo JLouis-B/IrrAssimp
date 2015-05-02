@@ -9,13 +9,6 @@
 #include <assimp/Importer.hpp>
 
 
-struct Material
-{
-    unsigned int id;
-    irr::video::SMaterial material;
-};
-
-
 class IrrAssimpImport
 {
     public:
@@ -24,14 +17,17 @@ class IrrAssimpImport
 
         irr::scene::IAnimatedMesh* loadMesh(irr::core::stringc path);
 
+        irr::core::stringc Error;
+
     protected:
     private:
         void createNode(irr::scene::ISkinnedMesh* mesh, aiNode* node);
         irr::scene::ISkinnedMesh::SJoint* findJoint (irr::scene::ISkinnedMesh* mesh, irr::core::stringc jointName);
         aiNode* findNode (const aiScene* scene, aiString jointName);
         void computeLocal(irr::scene::ISkinnedMesh* mesh, const aiScene* pScene, irr::scene::ISkinnedMesh::SJoint* joint);
+        irr::video::ITexture* getTexture(irr::core::stringc path, irr::core::stringc fileDir);
 
-        irr::core::array<Material> Mats;
+        irr::core::array<irr::video::SMaterial> Mats;
 
         irr::scene::ISceneManager* Smgr;
         irr::io::IFileSystem* FileSystem;

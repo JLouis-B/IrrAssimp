@@ -22,6 +22,7 @@ class IrrAssimp
         IrrAssimp(irr::scene::ISceneManager* smgr);
         virtual ~IrrAssimp();
 
+
         /*  Get a mesh with Assimp.
             Like ISceneManager::getMesh, check if the mesh is already in the MeshCache, and if it's not the case, Assimp load it.
         */
@@ -39,14 +40,19 @@ class IrrAssimp
         */
         bool exportMesh(irr::scene::IMesh* mesh, irr::core::stringc format, irr::core::stringc path);
 
+
+        // Return the list of available export formats
         irr::core::array<ExportFormat> getExportFormats();
+
+
+        // Return the error of the last loading. Return an empty string if no error.
+        irr::core::stringc getError();
 
 
         // Check if the file has a loadable extension
         bool isLoadable(irr::core::stringc path);
 
 
-    protected:
     private:
         irr::scene::IMeshCache* Cache;
         irr::io::IFileSystem* FileSystem;

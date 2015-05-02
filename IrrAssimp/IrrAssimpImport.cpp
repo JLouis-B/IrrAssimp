@@ -72,20 +72,6 @@ aiNode* IrrAssimpImport::findNode (const aiScene* scene, aiString jointName)
     return scene->mRootNode->FindNode(jointName);
 }
 
-
-aiBone* findBone (const aiScene* scene, int meshID, aiString jointName)
-{
-    aiMesh* mesh = scene->mMeshes[meshID];
-    for (unsigned int i = 0; i < mesh->mNumBones; ++i)
-    {
-        if (mesh->mBones[i]->mName == jointName)
-            return mesh->mBones[i];
-    }
-
-    std::cout << "Error, no joint" << std::endl;
-    return 0;
-}
-
 void IrrAssimpImport::createNode(scene::ISkinnedMesh* mesh, aiNode* node)
 {
     scene::ISkinnedMesh::SJoint* jointParent = 0;
@@ -101,16 +87,34 @@ void IrrAssimpImport::createNode(scene::ISkinnedMesh* mesh, aiNode* node)
 
     for (unsigned int i = 0; i < node->mNumMeshes; ++i)
     {
-        joint->AttachedMeshes.push_back((unsigned int)mesh->getMeshBuffer(node->mMeshes[i]));
-
+        joint->AttachedMeshes.push_back(node->mMeshes[i]);
     }
 
     for (unsigned int i = 0; i < node->mNumChildren; ++i)
     {
         aiNode* childNode = node->mChildren[i];
-
         createNode(mesh, childNode);
     }
+}
+
+video::SColor AssimpToIrrColor(aiColor4D color)
+{
+    return video::SColor(color.a * 255.f, color.r * 255.f, color.g * 255.f, color.b * 255.f);
+}
+
+video::ITexture* IrrAssimpImport::getTexture(core::stringc path, core::stringc fileDir)
+{
+    video::ITexture* texture = 0;
+
+    if (FileSystem->existFile(path.c_str()))
+        texture = Smgr->getVideoDriver()->getTexture(path.c_str());
+    else if (FileSystem->existFile(fileDir + "/" + path.c_str()))
+        texture = Smgr->getVideoDriver()->getTexture(fileDir + "/" + path.c_str());
+    else if (FileSystem->existFile(fileDir + "/" + FileSystem->getFileBasename(path.c_str())))
+        texture = Smgr->getVideoDriver()->getTexture(fileDir + "/" + FileSystem->getFileBasename(path.c_str()));
+
+    return texture;
+    // TODO after 1.9 release : Rewrite this with IMeshTextureLoader
 }
 
 irr::scene::IAnimatedMesh* IrrAssimpImport::loadMesh(irr::core::stringc path)
@@ -119,7 +123,13 @@ irr::scene::IAnimatedMesh* IrrAssimpImport::loadMesh(irr::core::stringc path)
     const aiScene* pScene = Importer.ReadFile(path.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
 
     if (!pScene)
+    {
+        Error = Importer.GetErrorString();
         return 0;
+    }
+
+    else
+        Error = "";
 
     core::stringc fileDir = FileSystem->getFileDir(path);
 
@@ -128,27 +138,55 @@ irr::scene::IAnimatedMesh* IrrAssimpImport::loadMesh(irr::core::stringc path)
     // Create mesh
     scene::ISkinnedMesh* mesh = Smgr->createSkinnedMesh();
 
+    // Basic material support
     for (unsigned int i = 0; i < pScene->mNumMaterials; ++i)
     {
-        Material irrMat;
-        irrMat.id = i;
-        irrMat.material.MaterialType = video::EMT_SOLID;
+        video::SMaterial material;
+        material.MaterialType = video::EMT_SOLID;
 
         aiMaterial* mat = pScene->mMaterials[i];
+
+        aiColor4D color;
+        if(AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_DIFFUSE, &color)) {
+            material.DiffuseColor = AssimpToIrrColor(color);
+        }
+        if(AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_AMBIENT, &color)) {
+            material.AmbientColor = AssimpToIrrColor(color);
+        }
+        if(AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_EMISSIVE, &color)) {
+            material.EmissiveColor = AssimpToIrrColor(color);
+        }
+        if(AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_SPECULAR, &color)) {
+            material.SpecularColor = AssimpToIrrColor(color);
+        }
+        float shininess;
+        if(AI_SUCCESS == aiGetMaterialFloat(mat, AI_MATKEY_SHININESS, &shininess)) {
+            material.Shininess = shininess;
+        }
+
+
         if (mat->GetTextureCount(aiTextureType_DIFFUSE) > 0)
         {
             aiString path;
             mat->GetTexture(aiTextureType_DIFFUSE, 0, &path);
 
-            if (FileSystem->existFile(path.C_Str()))
-                irrMat.material.setTexture(0, Smgr->getVideoDriver()->getTexture(path.C_Str()));
-            else if (FileSystem->existFile(fileDir + "/" + path.C_Str()))
-                irrMat.material.setTexture(0, Smgr->getVideoDriver()->getTexture(fileDir + "/" + path.C_Str()));
-            else if (FileSystem->existFile(fileDir + "/" + FileSystem->getFileBasename(path.C_Str())))
-                irrMat.material.setTexture(0, Smgr->getVideoDriver()->getTexture(fileDir + "/" + FileSystem->getFileBasename(path.C_Str())));
+            video::ITexture* diffuseTexture = getTexture(path.C_Str(), fileDir);
+            material.setTexture(0, diffuseTexture);
+        }
+        if (mat->GetTextureCount(aiTextureType_NORMALS) > 0)
+        {
+            aiString path;
+            mat->GetTexture(aiTextureType_NORMALS, 0, &path);
+
+            video::ITexture* normalsTexture = getTexture(path.C_Str(), fileDir);
+            if (normalsTexture)
+            {
+                material.setTexture(1, normalsTexture);
+                material.MaterialType = video::EMT_PARALLAX_MAP_SOLID;
+            }
         }
 
-        Mats.push_back(irrMat);
+        Mats.push_back(material);
     }
 
     aiNode* root = pScene->mRootNode;
@@ -167,20 +205,7 @@ irr::scene::IAnimatedMesh* IrrAssimpImport::loadMesh(irr::core::stringc path)
         for (unsigned int j = 0; j < paiMesh->mNumVertices; ++j)
         {
             aiVector3D vertex = paiMesh->mVertices[j];
-
-            buffer->Vertices_Standard[j].Pos.X = vertex.x;
-            buffer->Vertices_Standard[j].Pos.Y = vertex.y;
-            buffer->Vertices_Standard[j].Pos.Z = vertex.z;
-
-            //std::cout << "Coords=" << buffer->Vertices_Standard[j].Pos.X << ", " << buffer->Vertices_Standard[j].Pos.Y << ", " << buffer->Vertices_Standard[j].Pos.Z << std::endl;
-            /*
-            const aiVector3D* uv = paiMesh->mTextureCoords[0];
-            if (uv != NULL)
-            {
-                buffer->Vertices_Standard[j].TCoords.X = uv[j].x;
-                buffer->Vertices_Standard[j].TCoords.Y = uv[j].y;
-            }
-            */
+            buffer->Vertices_Standard[j].Pos = core::vector3df(vertex.x, vertex.y, vertex.z);
 
             if (paiMesh->HasNormals())
             {
@@ -238,7 +263,7 @@ irr::scene::IAnimatedMesh* IrrAssimpImport::loadMesh(irr::core::stringc path)
             buffer->Indices[3*j + 2] = face.mIndices[2];
         }
 
-        buffer->Material = Mats[paiMesh->mMaterialIndex].material;
+        buffer->Material = Mats[paiMesh->mMaterialIndex];
         buffer->recalculateBoundingBox();
 
         if (!paiMesh->HasNormals())
@@ -301,7 +326,6 @@ irr::scene::IAnimatedMesh* IrrAssimpImport::loadMesh(irr::core::stringc path)
     }
 
     int frameOffset = 0;
-
     for (unsigned int i = 0; i < pScene->mNumAnimations; ++i)
     {
         aiAnimation* anim = pScene->mAnimations[i];

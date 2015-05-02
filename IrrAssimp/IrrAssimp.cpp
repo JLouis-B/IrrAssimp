@@ -62,6 +62,11 @@ irr::scene::IAnimatedMesh* IrrAssimp::getMesh(const io::path& path)
 	return msh;
 }
 
+irr::core::stringc IrrAssimp::getError()
+{
+    return Importer->Error;
+}
+
 
 core::array<ExportFormat> IrrAssimp::getExportFormats()
 {

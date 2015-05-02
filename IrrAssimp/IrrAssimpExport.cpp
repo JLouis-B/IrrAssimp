@@ -141,7 +141,10 @@ void IrrAssimpExport::writeFile(irr::scene::IMesh* mesh, irr::core::stringc form
             // Normal map
             if (   mat.MaterialType == video::EMT_NORMAL_MAP_SOLID
                 || mat.MaterialType == video::EMT_NORMAL_MAP_TRANSPARENT_ADD_COLOR
-                || mat.MaterialType == video::EMT_NORMAL_MAP_TRANSPARENT_VERTEX_ALPHA)
+                || mat.MaterialType == video::EMT_NORMAL_MAP_TRANSPARENT_VERTEX_ALPHA
+                || mat.MaterialType == video::EMT_PARALLAX_MAP_SOLID
+                || mat.MaterialType == video::EMT_PARALLAX_MAP_TRANSPARENT_ADD_COLOR
+                || mat.MaterialType == video::EMT_PARALLAX_MAP_TRANSPARENT_VERTEX_ALPHA)
             {
                 aiString textureName = aiString(mat.getTexture(1)->getName().getPath().c_str());
                 scene->mMaterials[i]->AddProperty(&textureName, AI_MATKEY_TEXTURE_NORMALS(0));
