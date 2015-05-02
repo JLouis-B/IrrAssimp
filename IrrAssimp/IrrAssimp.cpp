@@ -85,9 +85,9 @@ core::array<ExportFormat> IrrAssimp::getExportFormats()
 
 bool IrrAssimp::isLoadable(irr::core::stringc path)
 {
-    Assimp::Importer Importer;
+    Assimp::Importer importer;
 
     irr::core::stringc extension;
     irr::core::getFileNameExtension(extension, path);
-    return Importer.IsExtensionSupported (extension.c_str());
+    return importer.IsExtensionSupported (extension.c_str());
 }
