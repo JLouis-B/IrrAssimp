@@ -334,6 +334,9 @@ irr::scene::IAnimatedMesh* IrrAssimpImport::loadMesh(irr::core::stringc path)
         {
             mesh->setAnimationSpeed(anim->mTicksPerSecond);
         }
+		// Some loader of assimp give time in second for keyframe instead of frame number, which cause bug when casted to int
+        if (anim->mTicksPerSecond == 1)
+            mesh->setAnimationSpeed(mesh->getAnimationSpeed() * 60.f);
 
         //std::cout << "numChannels : " << anim->mNumChannels << std::endl;
         for (unsigned int j = 0; j < anim->mNumChannels; ++j)
@@ -348,6 +351,8 @@ irr::scene::IAnimatedMesh* IrrAssimpImport::loadMesh(irr::core::stringc path)
                 scene::ISkinnedMesh::SPositionKey* irrKey = mesh->addPositionKey(joint);
 
                 irrKey->frame = key.mTime + frameOffset;
+                if (anim->mTicksPerSecond == 1)
+                    irrKey->frame *= 60.f;
                 irrKey->position = core::vector3df(key.mValue.x, key.mValue.y, key.mValue.z);
             }
             for (unsigned int k = 0; k < nodeAnim->mNumRotationKeys; ++k)
@@ -356,10 +361,13 @@ irr::scene::IAnimatedMesh* IrrAssimpImport::loadMesh(irr::core::stringc path)
                 aiQuaternion assimpQuat = key.mValue;
 
                 core::quaternion quat (-assimpQuat.x, -assimpQuat.y, -assimpQuat.z, assimpQuat.w);
+				quat.normalize();
 
                 scene::ISkinnedMesh::SRotationKey* irrKey = mesh->addRotationKey(joint);
 
                 irrKey->frame = key.mTime + frameOffset;
+                if (anim->mTicksPerSecond == 1)
+                    irrKey->frame *= 60.f;
                 irrKey->rotation = quat;
             }
             for (unsigned int k = 0; k < nodeAnim->mNumScalingKeys; ++k)
@@ -369,6 +377,8 @@ irr::scene::IAnimatedMesh* IrrAssimpImport::loadMesh(irr::core::stringc path)
                 scene::ISkinnedMesh::SScaleKey* irrKey = mesh->addScaleKey(joint);
 
                 irrKey->frame = key.mTime + frameOffset;
+                if (anim->mTicksPerSecond == 1)
+                    irrKey->frame *= 60.f;
                 irrKey->scale = core::vector3df(key.mValue.x, key.mValue.y, key.mValue.z);
             }
 
