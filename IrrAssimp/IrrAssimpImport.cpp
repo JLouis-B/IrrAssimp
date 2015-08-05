@@ -122,8 +122,20 @@ video::ITexture* IrrAssimpImport::getTexture(core::stringc path, core::stringc f
     // TODO after 1.9 release : Rewrite this with IMeshTextureLoader
 }
 
-irr::scene::IAnimatedMesh* IrrAssimpImport::loadMesh(irr::core::stringc path)
+bool IrrAssimpImport::isALoadableFileExtension(const io::path& filename) const
 {
+    Assimp::Importer importer;
+
+    irr::core::stringc extension;
+    irr::core::getFileNameExtension(extension, filename);
+    return importer.IsExtensionSupported (extension.c_str());
+}
+
+
+irr::scene::IAnimatedMesh* IrrAssimpImport::createMesh(irr::io::IReadFile* file)
+{
+    irr::io::path path = file->getFileName();
+	
     Assimp::Importer Importer;
     const aiScene* pScene = Importer.ReadFile(path.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
 

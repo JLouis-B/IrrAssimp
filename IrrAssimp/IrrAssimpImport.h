@@ -9,13 +9,14 @@
 #include <assimp/Importer.hpp>
 
 
-class IrrAssimpImport
+class IrrAssimpImport : public irr::scene::IMeshLoader
 {
     public:
         IrrAssimpImport(irr::scene::ISceneManager* smgr);
         virtual ~IrrAssimpImport();
 
-        irr::scene::IAnimatedMesh* loadMesh(irr::core::stringc path);
+        virtual irr::scene::IAnimatedMesh* createMesh(irr::io::IReadFile* file);
+        virtual bool isALoadableFileExtension(const irr::io::path& filename) const;
 
         irr::core::stringc Error;
 

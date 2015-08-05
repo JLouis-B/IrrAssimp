@@ -40,7 +40,7 @@ int main()
 
     // The assimp loader is in a separate system and not directly as a meshLoader to give the choice to use Irrlicht or Assimp for mesh loading to the user, in function of the format for example
 	IrrAssimp assimp(smgr);
-    IAnimatedMesh* mesh = assimp.getMesh("Media/dwarf.X");
+    IAnimatedMesh* mesh = assimp.getMesh("Media/dwarf.x");
     //IAnimatedMesh* meshNoAssimp = smgr->getMesh("Media/ninja.b3d");
     assimp.exportMesh(mesh, "obj", "Media/export.obj");
 

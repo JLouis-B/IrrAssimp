@@ -41,7 +41,7 @@ irr::scene::IAnimatedMesh* IrrAssimp::getMesh(const io::path& path)
 
 	if (isLoadable(path))
     {
-        msh = Importer->loadMesh(path);
+        msh = Importer->createMesh(file);
 
         if (msh)
         {
@@ -83,11 +83,7 @@ core::array<ExportFormat> IrrAssimp::getExportFormats()
 }
 
 
-bool IrrAssimp::isLoadable(irr::core::stringc path)
+bool IrrAssimp::isLoadable(irr::io::path path)
 {
-    Assimp::Importer importer;
-
-    irr::core::stringc extension;
-    irr::core::getFileNameExtension(extension, path);
-    return importer.IsExtensionSupported (extension.c_str());
+    return Importer->isALoadableFileExtension(path);
 }
