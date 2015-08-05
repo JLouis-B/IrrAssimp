@@ -84,6 +84,11 @@ void IrrAssimpImport::createNode(scene::ISkinnedMesh* mesh, aiNode* node)
     scene::ISkinnedMesh::SJoint* joint = mesh->addJoint(jointParent);
     joint->Name = node->mName.C_Str();
     joint->LocalMatrix = AssimpToIrrMatrix(node->mTransformation);
+	
+	if (jointParent)
+        joint->GlobalMatrix = jointParent->GlobalMatrix * joint->LocalMatrix;
+    else
+        joint->GlobalMatrix = joint->LocalMatrix;
 
     for (unsigned int i = 0; i < node->mNumMeshes; ++i)
     {
