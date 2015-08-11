@@ -8,6 +8,7 @@
 #include <assimp/postprocess.h>    // Post processing flags
 #include <assimp/Importer.hpp>
 
+#include "IrrAssimpUtils.h"
 
 class IrrAssimpImport : public irr::scene::IMeshLoader
 {

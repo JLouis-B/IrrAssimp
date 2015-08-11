@@ -4,26 +4,19 @@
 
 using namespace irr;
 
-IrrAssimp::IrrAssimp(irr::scene::ISceneManager* smgr)
+IrrAssimp::IrrAssimp(irr::scene::ISceneManager* smgr) : Smgr(smgr), Cache(smgr->getMeshCache()), FileSystem(smgr->getFileSystem()), Importer(smgr), Exporter()
 {
-    Smgr = smgr;
-    Cache = smgr->getMeshCache();
-    FileSystem = smgr->getFileSystem();
 
-    Exporter = new IrrAssimpExport();
-    Importer = new IrrAssimpImport(smgr);
 }
 
 IrrAssimp::~IrrAssimp()
 {
-    //dtor
-    delete Importer;
-    delete Exporter;
+
 }
 
 bool IrrAssimp::exportMesh(irr::scene::IMesh* mesh, irr::core::stringc format, irr::core::stringc path)
 {
-    Exporter->writeFile(mesh, format, path);
+    Exporter.writeFile(mesh, format, path);
 }
 
 irr::scene::IAnimatedMesh* IrrAssimp::getMesh(const io::path& path)
@@ -41,7 +34,7 @@ irr::scene::IAnimatedMesh* IrrAssimp::getMesh(const io::path& path)
 
 	if (isLoadable(path))
     {
-        msh = Importer->createMesh(file);
+        msh = Importer.createMesh(file);
 
         if (msh)
         {
@@ -64,7 +57,7 @@ irr::scene::IAnimatedMesh* IrrAssimp::getMesh(const io::path& path)
 
 irr::core::stringc IrrAssimp::getError()
 {
-    return Importer->Error;
+    return Importer.Error;
 }
 
 
@@ -85,5 +78,5 @@ core::array<ExportFormat> IrrAssimp::getExportFormats()
 
 bool IrrAssimp::isLoadable(irr::io::path path)
 {
-    return Importer->isALoadableFileExtension(path);
+    return Importer.isALoadableFileExtension(path);
 }

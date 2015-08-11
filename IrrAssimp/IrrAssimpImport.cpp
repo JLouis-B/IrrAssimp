@@ -84,7 +84,7 @@ void IrrAssimpImport::createNode(scene::ISkinnedMesh* mesh, aiNode* node)
     scene::ISkinnedMesh::SJoint* joint = mesh->addJoint(jointParent);
     joint->Name = node->mName.C_Str();
     joint->LocalMatrix = AssimpToIrrMatrix(node->mTransformation);
-	
+
 	if (jointParent)
         joint->GlobalMatrix = jointParent->GlobalMatrix * joint->LocalMatrix;
     else
@@ -126,18 +126,18 @@ bool IrrAssimpImport::isALoadableFileExtension(const io::path& filename) const
 {
     Assimp::Importer importer;
 
-    irr::core::stringc extension;
+    io::path extension;
     irr::core::getFileNameExtension(extension, filename);
-    return importer.IsExtensionSupported (extension.c_str());
+    return importer.IsExtensionSupported (to_char_string(extension).c_str());
 }
 
 
 irr::scene::IAnimatedMesh* IrrAssimpImport::createMesh(irr::io::IReadFile* file)
 {
     irr::io::path path = file->getFileName();
-	
+
     Assimp::Importer Importer;
-    const aiScene* pScene = Importer.ReadFile(path.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+    const aiScene* pScene = Importer.ReadFile(to_char_string(path).c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
 
     if (!pScene)
     {

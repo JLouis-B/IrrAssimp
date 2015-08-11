@@ -133,7 +133,7 @@ void IrrAssimpExport::writeFile(irr::scene::IMesh* mesh, irr::core::stringc form
 
         if (mat.getTexture(0))
         {
-            aiString textureName = aiString(mat.getTexture(0)->getName().getPath().c_str());
+            aiString textureName = aiString(to_char_string(mat.getTexture(0)->getName().getPath()).c_str());
             scene->mMaterials[i]->AddProperty(&textureName, AI_MATKEY_TEXTURE_DIFFUSE(0));
         }
         if (mat.getTexture(1))
@@ -146,7 +146,7 @@ void IrrAssimpExport::writeFile(irr::scene::IMesh* mesh, irr::core::stringc form
                 || mat.MaterialType == video::EMT_PARALLAX_MAP_TRANSPARENT_ADD_COLOR
                 || mat.MaterialType == video::EMT_PARALLAX_MAP_TRANSPARENT_VERTEX_ALPHA)
             {
-                aiString textureName = aiString(mat.getTexture(1)->getName().getPath().c_str());
+                aiString textureName = aiString(to_char_string(mat.getTexture(1)->getName().getPath()).c_str());
                 scene->mMaterials[i]->AddProperty(&textureName, AI_MATKEY_TEXTURE_NORMALS(0));
             }
 
@@ -156,7 +156,7 @@ void IrrAssimpExport::writeFile(irr::scene::IMesh* mesh, irr::core::stringc form
         scene->mMeshes[i] = assMesh;
     }
 
-    exporter.Export(scene, format.c_str(), filename.c_str(), aiProcess_FlipUVs);
+    exporter.Export(scene, format.c_str(), to_char_string(filename).c_str(), aiProcess_FlipUVs);
 
     delete scene;
 }

@@ -50,16 +50,16 @@ class IrrAssimp
 
 
         // Check if the file has a loadable extension
-        bool isLoadable(irr::core::stringc path);
+        bool isLoadable(irr::io::path path);
 
 
     private:
+		irr::scene::ISceneManager* Smgr;
         irr::scene::IMeshCache* Cache;
         irr::io::IFileSystem* FileSystem;
-        irr::scene::ISceneManager* Smgr;
 
-        IrrAssimpImport* Importer;
-        IrrAssimpExport* Exporter;
+        IrrAssimpImport Importer;
+        IrrAssimpExport Exporter;
 
 };
 

@@ -8,6 +8,8 @@
 #include <assimp/postprocess.h>    // Post processing flags
 #include <assimp/Exporter.hpp>
 
+#include "IrrAssimpUtils.h"
+
 class IrrAssimpExport
 {
     public:
