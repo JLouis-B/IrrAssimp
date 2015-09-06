@@ -314,8 +314,11 @@ irr::scene::IAnimatedMesh* IrrAssimpImport::createMesh(irr::io::IReadFile* file)
 
             core::matrix4 translationMatrix;
             translationMatrix.setTranslation(translation);
+			
+			core::matrix4 scaleMatrix;
+            scaleMatrix.setScale(invBoneOffset.getScale());
 
-            core::matrix4 globalBoneMatrix = rotationMatrix * translationMatrix;
+            core::matrix4 globalBoneMatrix = scaleMatrix * rotationMatrix * translationMatrix;
             globalBoneMatrix.setInverseTranslation(globalBoneMatrix.getTranslation());
 
             joint->GlobalMatrix = globalBoneMatrix;
