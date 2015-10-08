@@ -16,6 +16,8 @@ class IrrAssimpExport
         IrrAssimpExport();
         virtual ~IrrAssimpExport();
         void writeFile(irr::scene::IMesh* mesh, irr::core::stringc format, irr::core::stringc filename);
+        void createAnimations(irr::scene::ISkinnedMesh* mesh, aiScene* scene);
+        aiNode* createNode(irr::scene::ISkinnedMesh::SJoint* joint, aiScene* scene);
     protected:
     private:
 };

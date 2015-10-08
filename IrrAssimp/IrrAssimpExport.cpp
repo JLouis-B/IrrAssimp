@@ -18,6 +18,150 @@ aiColor3D IrrToAssimpColor(video::SColor color)
     return aiColor3D(color.getRed() / 255.f, color.getGreen() / 255.f, color.getBlue() / 255.f);
 }
 
+aiVector3D IrrToAssimpVector(core::vector3df vect)
+{
+    return aiVector3D(vect.X, vect.Y, vect.Z);
+}
+
+aiQuaternion IrrToAssimpQuaternion(core::quaternion quat)
+{
+    return aiQuaternion(quat.W, quat.X, quat.Y, quat.Z);
+}
+
+aiMatrix4x4 IrrToAssimpMatrix(core::matrix4 irrMatrix)
+{
+    aiMatrix4x4 assimpMatrix;
+
+    assimpMatrix.a1 = irrMatrix[0];
+    assimpMatrix.b1 = irrMatrix[1];
+    assimpMatrix.c1 = irrMatrix[2];
+    assimpMatrix.d1 = irrMatrix[3];
+
+    assimpMatrix.a2 = irrMatrix[4];
+    assimpMatrix.b2 = irrMatrix[5];
+    assimpMatrix.c2 = irrMatrix[6];
+    assimpMatrix.d2 = irrMatrix[7];
+
+    assimpMatrix.a3 = irrMatrix[8];
+    assimpMatrix.b3 = irrMatrix[9];
+    assimpMatrix.c3 = irrMatrix[10];
+    assimpMatrix.d3 = irrMatrix[11];
+
+    assimpMatrix.a4 = irrMatrix[12];
+    assimpMatrix.b4 = irrMatrix[13];
+    assimpMatrix.c4 = irrMatrix[14];
+    assimpMatrix.d4 = irrMatrix[15];
+
+    return assimpMatrix;
+}
+
+core::array<scene::ISkinnedMesh::SJoint*> getRootJoints(const scene::ISkinnedMesh* mesh)
+{
+    core::array<scene::ISkinnedMesh::SJoint*> roots;
+
+    core::array<scene::ISkinnedMesh::SJoint*> allJoints = mesh->getAllJoints();
+    for (u32 i = 0; i < allJoints.size(); i++)
+    {
+        bool isRoot = true;
+        scene::ISkinnedMesh::SJoint* testedJoint = allJoints[i];
+        for (u32 j = 0; j < allJoints.size(); j++)
+        {
+           scene::ISkinnedMesh::SJoint* testedJoint2 = allJoints[j];
+           for (u32 k = 0; k < testedJoint2->Children.size(); k++)
+           {
+               if (testedJoint == testedJoint2->Children[k])
+                    isRoot = false;
+           }
+        }
+        if (isRoot)
+            roots.push_back(testedJoint);
+    }
+
+    return roots;
+}
+
+aiNode* IrrAssimpExport::createNode(scene::ISkinnedMesh::SJoint* joint, aiScene* scene)
+{
+    aiNode* node = new aiNode();
+    node->mName = aiString(joint->Name.c_str());
+    node->mTransformation = IrrToAssimpMatrix(joint->LocalMatrix);
+
+    node->mNumMeshes = joint->AttachedMeshes.size();
+    node->mMeshes = new unsigned int[joint->AttachedMeshes.size()];
+    for (u32 i = 0; i < joint->AttachedMeshes.size(); ++i)
+    {
+        node->mMeshes[i] = joint->AttachedMeshes[i];
+    }
+
+    node->mNumChildren = joint->Children.size();
+    node->mChildren = new aiNode*[joint->Children.size()];
+    for (u32 i = 0; i < joint->Children.size(); ++i)
+    {
+        aiNode* child = createNode(joint->Children[i], scene);
+        node->mChildren[i] = child;
+    }
+    return node;
+}
+
+void IrrAssimpExport::createAnimations(irr::scene::ISkinnedMesh* mesh, aiScene* scene)
+{
+    if (mesh->getFrameCount() == 0)
+    {
+        scene->mNumAnimations = 0;
+        return;
+    }
+
+    scene->mNumAnimations = 1;
+    scene->mAnimations = new aiAnimation*[1];
+    scene->mAnimations[0] = new aiAnimation();
+
+    scene->mAnimations[0]->mChannels = new aiNodeAnim*[mesh->getJointCount()];
+    scene->mAnimations[0]->mNumChannels = mesh->getJointCount();
+
+    scene->mAnimations[0]->mDuration = mesh->getFrameCount();
+    scene->mAnimations[0]->mTicksPerSecond = mesh->getAnimationSpeed();
+    scene->mAnimations[0]->mName = aiString("default");
+
+    for (u32 i = 0; i < mesh->getJointCount(); ++i)
+    {
+        const scene::ISkinnedMesh::SJoint* joint = mesh->getAllJoints()[i];
+
+        scene->mAnimations[0]->mChannels[i] = new aiNodeAnim();
+        scene->mAnimations[0]->mChannels[i]->mNodeName = aiString(joint->Name.c_str());
+
+
+        scene->mAnimations[0]->mChannels[i]->mNumPositionKeys = joint->PositionKeys.size();
+        scene->mAnimations[0]->mChannels[i]->mPositionKeys = new aiVectorKey[joint->PositionKeys.size()];
+        for (u32 j = 0; j < joint->PositionKeys.size(); ++j)
+        {
+            const scene::ISkinnedMesh::SPositionKey key = joint->PositionKeys[j];
+
+            scene->mAnimations[0]->mChannels[i]->mPositionKeys[j].mTime = key.frame;
+            scene->mAnimations[0]->mChannels[i]->mPositionKeys[j].mValue = IrrToAssimpVector(key.position);
+        }
+
+        scene->mAnimations[0]->mChannels[i]->mNumRotationKeys = joint->RotationKeys.size();
+        scene->mAnimations[0]->mChannels[i]->mRotationKeys = new aiQuatKey[joint->RotationKeys.size()];
+        for (u32 j = 0; j < joint->RotationKeys.size(); ++j)
+        {
+            const scene::ISkinnedMesh::SRotationKey key = joint->RotationKeys[j];
+
+            scene->mAnimations[0]->mChannels[i]->mRotationKeys[j].mTime = key.frame;
+            scene->mAnimations[0]->mChannels[i]->mRotationKeys[j].mValue = IrrToAssimpQuaternion(key.rotation);
+        }
+
+        scene->mAnimations[0]->mChannels[i]->mNumScalingKeys = joint->ScaleKeys.size();
+        scene->mAnimations[0]->mChannels[i]->mScalingKeys = new aiVectorKey[joint->ScaleKeys.size()];
+        for (u32 j = 0; j < joint->ScaleKeys.size(); ++j)
+        {
+            const scene::ISkinnedMesh::SScaleKey key = joint->ScaleKeys[j];
+
+            scene->mAnimations[0]->mChannels[i]->mScalingKeys[j].mTime = key.frame;
+            scene->mAnimations[0]->mChannels[i]->mScalingKeys[j].mValue = IrrToAssimpVector(key.scale);
+        }
+    }
+}
+
 void IrrAssimpExport::writeFile(irr::scene::IMesh* mesh, irr::core::stringc format, irr::core::stringc filename)
 {
     Assimp::Exporter exporter;
@@ -155,6 +299,20 @@ void IrrAssimpExport::writeFile(irr::scene::IMesh* mesh, irr::core::stringc form
 
         scene->mMeshes[i] = assMesh;
     }
+
+    if (scene::ISkinnedMesh* skinned = dynamic_cast<scene::ISkinnedMesh*> (mesh))
+    {
+        createAnimations(skinned, scene);
+
+        core::array<scene::ISkinnedMesh::SJoint*> roots = getRootJoints(skinned);
+        scene->mRootNode->mNumChildren = roots.size();
+        scene->mRootNode->mChildren = new aiNode*[roots.size()];
+        for (u32 i = 0; i < roots.size(); ++i)
+        {
+            scene->mRootNode->mChildren[i] = createNode(roots[i], scene);
+        }
+    }
+
 
     exporter.Export(scene, format.c_str(), to_char_string(filename).c_str(), aiProcess_FlipUVs);
 
