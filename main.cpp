@@ -54,7 +54,7 @@ int main()
 	}
 
     // Export with assimp
-	assimp.exportMesh(mesh, "obj", "Media/export.obj");
+	//assimp.exportMesh(mesh, "obj", "Media/export.obj");
 
 	IAnimatedMeshSceneNode* node = smgr->addAnimatedMeshSceneNode( mesh );
 	node->setAnimationSpeed(mesh->getAnimationSpeed()); // Fixed by r5097
