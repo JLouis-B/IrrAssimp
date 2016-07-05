@@ -1,11 +1,10 @@
-# Compiled Object files
-*.o
+Builds
 
-# Code::Blocks .depend and .layout
-*.depend
-*.layout
-
-# Visual Studio files
-*.sdf
-*.suo
-
+#cmake.gitignore
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Makefile
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
