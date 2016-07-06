@@ -28,7 +28,7 @@ public:
 class IrrAssimpImport : public irr::scene::IMeshLoader
 {
     public:
-        IrrAssimpImport(irr::scene::ISceneManager* smgr);
+        explicit IrrAssimpImport(irr::scene::ISceneManager* smgr);
         virtual ~IrrAssimpImport();
 
         virtual irr::scene::IAnimatedMesh* createMesh(irr::io::IReadFile* file);
@@ -38,21 +38,24 @@ class IrrAssimpImport : public irr::scene::IMeshLoader
 
     protected:
     private:
-        void createNode(irr::scene::ISkinnedMesh* mesh, aiNode* node, bool isRoot);
-        irr::scene::ISkinnedMesh::SJoint* findJoint (irr::scene::ISkinnedMesh* mesh, irr::core::stringc jointName);
-        aiNode* findNode (const aiScene* scene, aiString jointName);
-        irr::video::ITexture* getTexture(irr::core::stringc path, irr::core::stringc fileDir);
-
-        irr::core::array<irr::video::SMaterial> Mats;
-
         irr::scene::ISceneManager* Smgr;
         irr::io::IFileSystem* FileSystem;
+        irr::core::array<irr::video::SMaterial> Mats;
+        const aiScene* AssimpScene;
+        irr::io::path FilePath;
+        irr::scene::ISkinnedMesh* Mesh;
 
-        irr::core::matrix4 InverseRootNodeWorldTransform;
+        void createMaterials();
+        void createMeshes();
+        void createAnimation();
+        void createNode(const aiNode* node);
+        irr::scene::ISkinnedMesh::SJoint* findJoint(const irr::core::stringc jointName);
+        aiNode* findNode(aiString jointName);
+        irr::video::ITexture* getTexture(irr::core::stringc path, irr::core::stringc fileDir);
 
+        // skinning
         irr::core::array<SkinnedVertex> skinnedVertex;
-
-        void skinJoint(irr::scene::ISkinnedMesh* mesh, irr::scene::ISkinnedMesh::SJoint *joint, aiBone* bone);
+        void skinJoint(irr::scene::ISkinnedMesh::SJoint *joint, aiBone* bone);
         void buildSkinnedVertexArray(irr::scene::IMeshBuffer* buffer);
         void applySkinnedVertexArray(irr::scene::IMeshBuffer* buffer);
 };

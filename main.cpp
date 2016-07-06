@@ -1,3 +1,4 @@
+#include <iostream>
 #include <irrlicht.h>
 #include "IrrAssimp/IrrAssimp.h"
 
@@ -15,11 +16,7 @@ using namespace gui;
 #pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
 #endif
 
-#include <iostream>
 
-/*
-This is the main method. We can now use main() on every platform.
-*/
 int main()
 {
 	IrrlichtDevice *device =
@@ -38,9 +35,9 @@ int main()
 	guienv->addStaticText(L"Hello World! This is the IrrAssimp demo!",
 		rect<s32>(10,10,260,22), true);
 
-    // The assimp loader can be used in a separate system and not directly as a meshLoader to give the choice to use Irrlicht or Assimp for mesh loading to the user, in function of the format for example
+    // The assimp loader can be used in a separate system and not directly as a meshLoader to give the choice of the loader to use (Irrlicht or Assimp) to the user
 	IrrAssimp assimp(smgr);
-    IAnimatedMesh* mesh = assimp.getMesh("Media/dwarf.x");
+    IAnimatedMesh* mesh = assimp.getMesh("Media/ninja.b3d");
 
     // It can also be used as a classic mesh loader :
     // smgr->addExternalMeshLoader(new IrrAssimpImport(smgr));
@@ -49,23 +46,20 @@ int main()
 
 	if (!mesh)
 	{
+	    std::cout << "Error : Fail to load Media/ninja.b3d" << std::endl;
 		device->drop();
 		return 1;
 	}
 
     // Export with assimp
-	//assimp.exportMesh(mesh, "obj", "Media/export.obj");
+	assimp.exportMesh(mesh, "obj", "Media/exportNinja.obj");
 
-	IAnimatedMeshSceneNode* node = smgr->addAnimatedMeshSceneNode( mesh );
-	node->setAnimationSpeed(mesh->getAnimationSpeed()); // Fixed by r5097
-
+	IAnimatedMeshSceneNode* node = smgr->addAnimatedMeshSceneNode(mesh);
 	if (node)
 	{
-		//node->setMaterialFlag(EMF_LIGHTING, false);
+	    node->setAnimationSpeed(mesh->getAnimationSpeed()); // Fixed by r5097
 		node->setDebugDataVisible(scene::EDS_SKELETON | scene::EDS_BBOX_ALL);
 		node->setScale(core::vector3df(10, 10, 10));
-
-		//node->setMaterialTexture( 0, driver->getTexture("../../media/dwarf.jpg") );
 	}
 
 	smgr->addCameraSceneNodeFPS();
@@ -85,7 +79,3 @@ int main()
 
 	return 0;
 }
-
-/*
-That's it. Compile and run.
-**/

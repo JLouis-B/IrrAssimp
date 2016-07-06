@@ -19,7 +19,7 @@ class ExportFormat
 class IrrAssimp
 {
     public:
-        IrrAssimp(irr::scene::ISceneManager* smgr);
+        explicit IrrAssimp(irr::scene::ISceneManager* smgr);
         virtual ~IrrAssimp();
 
 
