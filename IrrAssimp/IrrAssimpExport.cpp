@@ -299,20 +299,21 @@ void IrrAssimpExport::createMeshes(const scene::IMesh* mesh)
 void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::stringc filename)
 {
     Assimp::Exporter exporter;
-
+	
     AssimpScene = new aiScene();
-    AssimpScene->mRootNode = new aiNode();
-    AssimpScene->mRootNode->mNumMeshes = mesh->getMeshBufferCount();
+
+    AssimpScene->mRootNode = new aiNode("ROOT");
+	AssimpScene->mRootNode->mNumMeshes = mesh->getMeshBufferCount();
     AssimpScene->mRootNode->mMeshes = new unsigned int[mesh->getMeshBufferCount()];
     for (unsigned int i = 0; i < mesh->getMeshBufferCount(); ++i)
         AssimpScene->mRootNode->mMeshes[i] = i;
-
+		
     // Load materials
     createMaterials(mesh);
 
     // Load meshes
     createMeshes(mesh);
-
+	
 	
 #if (IRRLICHT_VERSION_MAJOR >= 2) || (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR >= 9)
 	if (mesh->getMeshType() == scene::EAMT_SKINNED)
@@ -330,10 +331,31 @@ void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::
     }
 #endif
 
-
-
     exporter.Export(AssimpScene, format.c_str(), to_char_string(filename).c_str(), aiProcess_FlipUVs);
 
-    delete AssimpScene;
+
+	// Delete the scene
+	delete AssimpScene->mRootNode;
+	AssimpScene->mRootNode = 0;
+
+	for (int i = 0; i < AssimpScene->mNumMeshes; ++i)
+		delete AssimpScene->mMeshes[i];
+	delete[] AssimpScene->mMeshes;
+	AssimpScene->mMeshes = 0;
+
+	for (int i = 0; i < AssimpScene->mNumMaterials; ++i)
+		delete AssimpScene->mMaterials[i];
+	delete[] AssimpScene->mMaterials;
+	AssimpScene->mMaterials = 0;
+
+	if (AssimpScene->HasAnimations())
+	{
+		for (int i = 0; i < AssimpScene->mNumAnimations; ++i)
+			delete AssimpScene->mAnimations[i];
+		delete[] AssimpScene->mAnimations;
+		AssimpScene->mAnimations = 0;
+	}
+
+	delete AssimpScene;
 }
 
