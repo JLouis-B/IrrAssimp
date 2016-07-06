@@ -313,8 +313,11 @@ void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::
     // Load meshes
     createMeshes(mesh);
 
-    if (scene::ISkinnedMesh* skinned = dynamic_cast<scene::ISkinnedMesh*>(mesh))
+	
+#if (IRRLICHT_VERSION_MAJOR >= 2) || (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR >= 9)
+	if (mesh->getMeshType() == scene::EAMT_SKINNED)
     {
+		scene::ISkinnedMesh* skinned = static_cast<scene::ISkinnedMesh*>(mesh);
         createAnimations(skinned);
 
         core::array<scene::ISkinnedMesh::SJoint*> roots = getRootJoints(skinned);
@@ -325,6 +328,8 @@ void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::
             AssimpScene->mRootNode->mChildren[i] = createNode(roots[i]);
         }
     }
+#endif
+
 
 
     exporter.Export(AssimpScene, format.c_str(), to_char_string(filename).c_str(), aiProcess_FlipUVs);
