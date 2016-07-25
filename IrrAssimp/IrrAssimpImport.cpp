@@ -95,9 +95,9 @@ void IrrAssimpImport::createNode(const aiNode* node)
     }
 }
 
-video::SColor AssimpToIrrColor(aiColor4D color)
+video::SColor AssimpToIrrColor(const aiColor4D color)
 {
-    return video::SColor(color.a * 255.f, color.r * 255.f, color.g * 255.f, color.b * 255.f);
+    return video::SColor(static_cast<u32>(color.a * 255), static_cast<u32>(color.r * 255), static_cast<u32>(color.g * 255), static_cast<u32>(color.b * 255));
 }
 
 video::ITexture* IrrAssimpImport::getTexture(core::stringc path, core::stringc fileDir)
@@ -231,19 +231,19 @@ void IrrAssimpImport::createMeshes()
 
         for (unsigned int j = 0; j < paiMesh->mNumVertices; ++j)
         {
-            aiVector3D vertex = paiMesh->mVertices[j];
+            const aiVector3D vertex = paiMesh->mVertices[j];
             buffer->Vertices_Standard[j].Pos = core::vector3df(vertex.x, vertex.y, vertex.z);
 
             if (paiMesh->HasNormals())
             {
-                aiVector3D normal = paiMesh->mNormals[j];
+                const aiVector3D normal = paiMesh->mNormals[j];
                 buffer->Vertices_Standard[j].Normal = core::vector3df(normal.x, normal.y, normal.z);
             }
 
             if (paiMesh->HasVertexColors(0))
             {
-                aiColor4D color = paiMesh->mColors[0][j] * 255.f;
-                buffer->Vertices_Standard[j].Color = video::SColor(color.a, color.r, color.g, color.b);
+                const aiColor4D color = paiMesh->mColors[0][j];
+                buffer->Vertices_Standard[j].Color = AssimpToIrrColor(color);
             }
             else
             {
@@ -443,11 +443,9 @@ void IrrAssimpImport::buildSkinnedVertexArray(scene::IMeshBuffer* buffer)
     skinnedVertex.clear();
 
     skinnedVertex.reallocate(buffer->getVertexCount());
-    skinnedVertex.set_used(buffer->getVertexCount());
-
     for (u32 i = 0; i < buffer->getVertexCount(); ++i)
     {
-        skinnedVertex[i] = SkinnedVertex();
+        skinnedVertex.push_back(SkinnedVertex());
     }
 
 }

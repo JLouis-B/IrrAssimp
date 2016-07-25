@@ -66,7 +66,7 @@ core::array<ExportFormat> IrrAssimp::getExportFormats()
     core::array<ExportFormat> formats;
 
     Assimp::Exporter exporter;
-    for (int i = 0; i < exporter.GetExportFormatCount(); ++i)
+    for (size_t i = 0; i < exporter.GetExportFormatCount(); ++i)
     {
          const aiExportFormatDesc* formatDesc = exporter.GetExportFormatDescription(i);
          formats.push_back(ExportFormat(formatDesc->fileExtension, formatDesc->id, formatDesc->description));
