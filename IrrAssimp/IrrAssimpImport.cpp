@@ -226,7 +226,6 @@ void IrrAssimpImport::createMeshes()
 
         scene::SSkinMeshBuffer* buffer = Mesh->addMeshBuffer();
 
-        buffer->Vertices_Standard.reallocate(paiMesh->mNumVertices);
         buffer->Vertices_Standard.set_used(paiMesh->mNumVertices);
 
         for (unsigned int j = 0; j < paiMesh->mNumVertices; ++j)
@@ -278,7 +277,6 @@ void IrrAssimpImport::createMeshes()
         }
 
 
-        buffer->Indices.reallocate(paiMesh->mNumFaces * 3);
         buffer->Indices.set_used(paiMesh->mNumFaces * 3);
 
         for (unsigned int j = 0; j < paiMesh->mNumFaces; ++j)
