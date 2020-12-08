@@ -23,14 +23,14 @@ aiColor4D IrrToAssimpColor4(video::SColor color)
     return aiColor4D(color.getRed() / 255.f, color.getGreen() / 255.f, color.getBlue() / 255.f, color.getAlpha() / 255.f);
 }
 
-aiVector3D IrrToAssimpVector(core::vector3df vect)
+aiVector3D IrrToAssimpVector3(core::vector3df vect)
 {
     return aiVector3D(vect.X, vect.Y, vect.Z);
 }
 
 aiQuaternion IrrToAssimpQuaternion(core::quaternion quat)
 {
-    return aiQuaternion(quat.W, quat.X, quat.Y, quat.Z);
+    return aiQuaternion(-quat.W, quat.X, quat.Y, quat.Z);
 }
 
 aiMatrix4x4 IrrToAssimpMatrix(core::matrix4 irrMatrix)
@@ -85,11 +85,25 @@ core::array<scene::ISkinnedMesh::SJoint*> getRootJoints(const scene::ISkinnedMes
     return roots;
 }
 
+core::array<u16> IrrAssimpExport::getMeshesMovedByBone(const scene::ISkinnedMesh::SJoint* joint)
+{
+    core::array<u16> buffers;
+    for (u32 i = 0; i < joint->Weights.size(); ++i)
+    {
+        u16 bufferId = joint->Weights[i].buffer_id;
+        if (buffers.binary_search(bufferId) == -1)
+            buffers.push_back(bufferId);
+    }
+
+    return buffers;
+}
+
 aiNode* IrrAssimpExport::createNode(const scene::ISkinnedMesh::SJoint* joint)
 {
     aiNode* node = new aiNode();
     node->mName = aiString(joint->Name.c_str());
     node->mTransformation = IrrToAssimpMatrix(joint->LocalMatrix);
+
 
     node->mNumMeshes = joint->AttachedMeshes.size();
     node->mMeshes = new unsigned int[joint->AttachedMeshes.size()];
@@ -97,6 +111,35 @@ aiNode* IrrAssimpExport::createNode(const scene::ISkinnedMesh::SJoint* joint)
     {
         node->mMeshes[i] = joint->AttachedMeshes[i];
     }
+
+    aiBone* bone = new aiBone();
+    core::array<u16> meshes = getMeshesMovedByBone(joint);
+    for (u32 i = 0; i < meshes.size(); ++i)
+    {
+        const u16 meshId = meshes[i];
+        bone->mName = aiString(joint->Name.c_str());
+
+
+        bone->mNumWeights = 0;
+        bone->mWeights = new aiVertexWeight[joint->Weights.size()];
+        for (u32 j = 0; j < joint->Weights.size(); ++j)
+        {
+            const scene::ISkinnedMesh::SWeight& w = joint->Weights[j];
+            if (w.buffer_id == meshes[i])
+            {
+                bone->mWeights[bone->mNumWeights].mWeight = w.strength;
+                bone->mWeights[bone->mNumWeights].mVertexId = w.vertex_id;
+                bone->mNumWeights++;
+            }
+        }
+
+        bone->mOffsetMatrix = IrrToAssimpMatrix(joint->GlobalMatrix);
+        bone->mNode = node;
+
+        AssimpScene->mMeshes[meshId]->mNumBones++;
+        AssimpScene->mMeshes[meshId]->mBones[AssimpScene->mMeshes[meshId]->mNumBones-1] = bone;
+    }
+
 
     node->mNumChildren = joint->Children.size();
     node->mChildren = new aiNode*[joint->Children.size()];
@@ -151,7 +194,7 @@ void IrrAssimpExport::createAnimations(const irr::scene::ISkinnedMesh* mesh)
         {
             const scene::ISkinnedMesh::SPositionKey key = joint->PositionKeys[j];
             channel->mPositionKeys[j].mTime = key.frame;
-            channel->mPositionKeys[j].mValue = IrrToAssimpVector(key.position);
+            channel->mPositionKeys[j].mValue = IrrToAssimpVector3(key.position);
         }
 
         channel->mNumRotationKeys = joint->RotationKeys.size();
@@ -169,7 +212,7 @@ void IrrAssimpExport::createAnimations(const irr::scene::ISkinnedMesh* mesh)
         {
             const scene::ISkinnedMesh::SScaleKey key = joint->ScaleKeys[j];
             channel->mScalingKeys[j].mTime = key.frame;
-            channel->mScalingKeys[j].mValue = IrrToAssimpVector(key.scale);
+            channel->mScalingKeys[j].mValue = IrrToAssimpVector3(key.scale);
         }
         animation->mChannels[i] = channel;
     }
@@ -313,17 +356,30 @@ void IrrAssimpExport::createMeshes(const scene::IMesh* mesh)
         }
 
         assimpMesh->mMaterialIndex = i;
+
+        assimpMesh->mNumBones = 0;
+        assimpMesh->mBones = new aiBone*[1024]; // allocate a 1024 bones buffer to avoid to resize the buffer for each bone added later
+
         AssimpScene->mMeshes[i] = assimpMesh;
     }
 }
 
 void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::stringc filename)
 {
+    scene::ISkinnedMesh* skinnedMesh = nullptr;
+#if (IRRLICHT_VERSION_MAJOR >= 2) || (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR >= 9)
+    if (mesh->getMeshType() == scene::EAMT_SKINNED)
+    {
+        skinnedMesh = static_cast<scene::ISkinnedMesh*>(mesh);
+        skinnedMesh->setHardwareSkinning(true); //seems to be a cheat to get static pose
+    }
+#endif
+
     Assimp::Exporter exporter;
 
     AssimpScene = new aiScene();
 
-    AssimpScene->mRootNode = new aiNode("ROOT");
+    AssimpScene->mRootNode = new aiNode("IRRASSIMP_ROOT");
 	AssimpScene->mRootNode->mNumMeshes = mesh->getMeshBufferCount();
     AssimpScene->mRootNode->mMeshes = new unsigned int[mesh->getMeshBufferCount()];
     for (unsigned int i = 0; i < mesh->getMeshBufferCount(); ++i)
@@ -335,22 +391,20 @@ void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::
     // Load meshes
     createMeshes(mesh);
 
-
-#if (IRRLICHT_VERSION_MAJOR >= 2) || (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR >= 9)
-	if (mesh->getMeshType() == scene::EAMT_SKINNED)
+    if (skinnedMesh)
     {
-		scene::ISkinnedMesh* skinned = static_cast<scene::ISkinnedMesh*>(mesh);
-        createAnimations(skinned);
+        createAnimations(skinnedMesh);
 
-        core::array<scene::ISkinnedMesh::SJoint*> roots = getRootJoints(skinned);
+        core::array<scene::ISkinnedMesh::SJoint*> roots = getRootJoints(skinnedMesh);
         AssimpScene->mRootNode->mNumChildren = roots.size();
         AssimpScene->mRootNode->mChildren = new aiNode*[roots.size()];
         for (u32 i = 0; i < roots.size(); ++i)
         {
             AssimpScene->mRootNode->mChildren[i] = createNode(roots[i]);
         }
+
+        skinnedMesh->setHardwareSkinning(false);
     }
-#endif
 
     exporter.Export(AssimpScene, format.c_str(), to_char_string(filename).c_str(), aiProcess_FlipUVs);
 
