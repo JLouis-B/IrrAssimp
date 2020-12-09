@@ -410,27 +410,6 @@ void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::
 
 
 	// Delete the scene
-	delete AssimpScene->mRootNode;
-	AssimpScene->mRootNode = 0;
-
-	for (unsigned int i = 0; i < AssimpScene->mNumMeshes; ++i)
-		delete AssimpScene->mMeshes[i];
-	delete[] AssimpScene->mMeshes;
-	AssimpScene->mMeshes = 0;
-
-	for (unsigned int i = 0; i < AssimpScene->mNumMaterials; ++i)
-		delete AssimpScene->mMaterials[i];
-	delete[] AssimpScene->mMaterials;
-	AssimpScene->mMaterials = 0;
-
-	if (AssimpScene->HasAnimations())
-	{
-		for (unsigned int i = 0; i < AssimpScene->mNumAnimations; ++i)
-			delete AssimpScene->mAnimations[i];
-		delete[] AssimpScene->mAnimations;
-		AssimpScene->mAnimations = 0;
-	}
-
 	delete AssimpScene;
 }
 
