@@ -125,7 +125,7 @@ aiNode* IrrAssimpExport::createNode(const scene::ISkinnedMesh::SJoint* joint)
 
 
         bone->mNumWeights = 0;
-        bone->mWeights = new aiVertexWeight[joint->Weights.size()];
+        bone->mWeights = new aiVertexWeight[m_weightsCountPerMeshesAndBones[std::make_pair(meshId, joint)]];
         for (u32 j = 0; j < joint->Weights.size(); ++j)
         {
             const scene::ISkinnedMesh::SWeight& w = joint->Weights[j];
@@ -157,7 +157,7 @@ aiNode* IrrAssimpExport::createNode(const scene::ISkinnedMesh::SJoint* joint)
 
 void IrrAssimpExport::createAnimations(const irr::scene::ISkinnedMesh* mesh)
 {
-    if (mesh->getFrameCount() == 0)
+    if (mesh->getFrameCount() == 0 || mesh->getFrameCount() == 1)
     {
         AssimpScene->mNumAnimations = 0;
         return;
@@ -218,6 +218,7 @@ void IrrAssimpExport::createAnimations(const irr::scene::ISkinnedMesh* mesh)
             channel->mScalingKeys[j].mTime = key.frame;
             channel->mScalingKeys[j].mValue = IrrToAssimpVector3(key.scale);
         }
+
         animation->mChannels[i] = channel;
     }
 
@@ -380,6 +381,7 @@ void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::
 
         // Count some stuffs needed later
         m_bonesPerMesh.clear();
+        m_weightsCountPerMeshesAndBones.clear();
         for (u32 i = 0; i < skinnedMesh->getMeshBufferCount(); ++i)
         {
             m_bonesPerMesh.insert(std::make_pair(i, core::array<const scene::ISkinnedMesh::SJoint*>()));
@@ -394,6 +396,16 @@ void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::
                 if (m_bonesPerMesh[w.buffer_id].binary_search(joint) == -1)
                 {
                     m_bonesPerMesh[w.buffer_id].push_back(joint);
+                }
+
+                std::pair<u16, const scene::ISkinnedMesh::SJoint*> meshBone = std::make_pair(w.buffer_id, joint);
+                if (m_weightsCountPerMeshesAndBones.find(meshBone) == m_weightsCountPerMeshesAndBones.end())
+                {
+                    m_weightsCountPerMeshesAndBones.insert(std::make_pair(meshBone, 1));
+                }
+                else
+                {
+                    m_weightsCountPerMeshesAndBones[meshBone]++;
                 }
             }
         }
