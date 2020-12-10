@@ -88,11 +88,14 @@ core::array<scene::ISkinnedMesh::SJoint*> getRootJoints(const scene::ISkinnedMes
 core::array<u16> IrrAssimpExport::getMeshesMovedByBone(const scene::ISkinnedMesh::SJoint* joint)
 {
     core::array<u16> buffers;
-    for (u32 i = 0; i < joint->Weights.size(); ++i)
+
+    for (auto it = m_bonesPerMesh.begin(); it != m_bonesPerMesh.end(); it++)
     {
-        u16 bufferId = joint->Weights[i].buffer_id;
-        if (buffers.binary_search(bufferId) == -1)
-            buffers.push_back(bufferId);
+        core::array<const scene::ISkinnedMesh::SJoint*> bones = it->second;
+        if (bones.binary_search(joint) != -1)
+        {
+            buffers.push_back(it->first);
+        }
     }
 
     return buffers;
@@ -112,10 +115,11 @@ aiNode* IrrAssimpExport::createNode(const scene::ISkinnedMesh::SJoint* joint)
         node->mMeshes[i] = joint->AttachedMeshes[i];
     }
 
-    aiBone* bone = new aiBone();
+
     core::array<u16> meshes = getMeshesMovedByBone(joint);
     for (u32 i = 0; i < meshes.size(); ++i)
     {
+        aiBone* bone = new aiBone();
         const u16 meshId = meshes[i];
         bone->mName = aiString(joint->Name.c_str());
 
@@ -136,8 +140,8 @@ aiNode* IrrAssimpExport::createNode(const scene::ISkinnedMesh::SJoint* joint)
         bone->mOffsetMatrix = IrrToAssimpMatrix(joint->GlobalMatrix);
         bone->mNode = node;
 
+        AssimpScene->mMeshes[meshId]->mBones[AssimpScene->mMeshes[meshId]->mNumBones] = bone;
         AssimpScene->mMeshes[meshId]->mNumBones++;
-        AssimpScene->mMeshes[meshId]->mBones[AssimpScene->mMeshes[meshId]->mNumBones-1] = bone;
     }
 
 
@@ -358,7 +362,7 @@ void IrrAssimpExport::createMeshes(const scene::IMesh* mesh)
         assimpMesh->mMaterialIndex = i;
 
         assimpMesh->mNumBones = 0;
-        assimpMesh->mBones = new aiBone*[1024]; // allocate a 1024 bones buffer to avoid to resize the buffer for each bone added later
+        assimpMesh->mBones = new aiBone*[m_bonesPerMesh[i].size()];
 
         AssimpScene->mMeshes[i] = assimpMesh;
     }
@@ -372,6 +376,27 @@ void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::
     {
         skinnedMesh = static_cast<scene::ISkinnedMesh*>(mesh);
         skinnedMesh->setHardwareSkinning(true); //seems to be a cheat to get static pose
+
+
+        // Count some stuffs needed later
+        m_bonesPerMesh.clear();
+        for (u32 i = 0; i < skinnedMesh->getMeshBufferCount(); ++i)
+        {
+            m_bonesPerMesh.insert(std::make_pair(i, core::array<const scene::ISkinnedMesh::SJoint*>()));
+        }
+
+        for (u32 i = 0; i < skinnedMesh->getAllJoints().size(); ++i)
+        {
+            const scene::ISkinnedMesh::SJoint* joint = skinnedMesh->getAllJoints()[i];
+            for (u32 j = 0; j < joint->Weights.size(); ++j)
+            {
+                const scene::ISkinnedMesh::SWeight& w = joint->Weights[j];
+                if (m_bonesPerMesh[w.buffer_id].binary_search(joint) == -1)
+                {
+                    m_bonesPerMesh[w.buffer_id].push_back(joint);
+                }
+            }
+        }
     }
 #endif
 
@@ -407,7 +432,6 @@ void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::
     }
 
     exporter.Export(AssimpScene, format.c_str(), to_char_string(filename).c_str(), aiProcess_FlipUVs);
-
 
 	// Delete the scene
 	delete AssimpScene;
