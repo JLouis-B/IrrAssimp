@@ -1,9 +1,10 @@
 #ifndef IRRASSIMP_H
 #define IRRASSIMP_H
 
-#include <irrlicht.h>
 #include "IrrAssimpExport.h"
 #include "IrrAssimpImport.h"
+
+#include <IMeshCache.h>
 
 class ExportFormat
 {
@@ -31,12 +32,6 @@ class IrrAssimp
 
         /*  Export a mesh.
             The "format" parameter correspond to the Assimp format ID.
-            You can get the list via getExportFormats, or for Assimp 3.1.1, you can use the followings :
-            - "collada" for the Collada export
-            - "obj" for Wavefront OBJ
-            - "stl" for STL
-            - "stlb" for STL in binary mode
-            - and "ply" for the PLY format
         */
         void exportMesh(irr::scene::IMesh* mesh, irr::core::stringc format, irr::core::stringc path);
 

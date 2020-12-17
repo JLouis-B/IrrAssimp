@@ -374,7 +374,7 @@ void IrrAssimpImport::createMeshes()
 
 void IrrAssimpImport::createAnimation()
 {
-    int frameOffset = 0;
+    double frameOffset = 0.f;
     for (unsigned int i = 0; i < AssimpScene->mNumAnimations; ++i)
     {
         aiAnimation* anim = AssimpScene->mAnimations[i];
@@ -383,9 +383,6 @@ void IrrAssimpImport::createAnimation()
         {
             Mesh->setAnimationSpeed(anim->mTicksPerSecond);
         }
-		// Some loader of assimp give time in second for keyframe instead of frame number, which cause bug when casted to int
-        if (anim->mTicksPerSecond == 1)
-            Mesh->setAnimationSpeed(Mesh->getAnimationSpeed() * 60.f);
 
         //std::cout << "numChannels : " << anim->mNumChannels << std::endl;
         for (unsigned int j = 0; j < anim->mNumChannels; ++j)
@@ -398,10 +395,7 @@ void IrrAssimpImport::createAnimation()
                 aiVectorKey key = nodeAnim->mPositionKeys[k];
 
                 scene::ISkinnedMesh::SPositionKey* irrKey = Mesh->addPositionKey(joint);
-
                 irrKey->frame = key.mTime + frameOffset;
-                if (anim->mTicksPerSecond == 1)
-                    irrKey->frame *= 60.f;
                 irrKey->position = assimpToIrrVector3(key.mValue);
             }
             for (unsigned int k = 0; k < nodeAnim->mNumRotationKeys; ++k)
@@ -409,10 +403,7 @@ void IrrAssimpImport::createAnimation()
                 aiQuatKey key = nodeAnim->mRotationKeys[k];
 
                 scene::ISkinnedMesh::SRotationKey* irrKey = Mesh->addRotationKey(joint);
-
                 irrKey->frame = key.mTime + frameOffset;
-                if (anim->mTicksPerSecond == 1)
-                    irrKey->frame *= 60.f;
                 irrKey->rotation = assimpToIrrQuaternion(key.mValue);
             }
             for (unsigned int k = 0; k < nodeAnim->mNumScalingKeys; ++k)
@@ -420,10 +411,7 @@ void IrrAssimpImport::createAnimation()
                 aiVectorKey key = nodeAnim->mScalingKeys[k];
 
                 scene::ISkinnedMesh::SScaleKey* irrKey = Mesh->addScaleKey(joint);
-
                 irrKey->frame = key.mTime + frameOffset;
-                if (anim->mTicksPerSecond == 1)
-                    irrKey->frame *= 60.f;
                 irrKey->scale = assimpToIrrVector3(key.mValue);
             }
 

@@ -1,6 +1,6 @@
 #include "IrrAssimp.h"
 
-#include <iostream>
+#include <ISceneManager.h>
 
 using namespace irr;
 
