@@ -1,8 +1,8 @@
 #ifndef IRRASSIMPIMPORT_H
 #define IRRASSIMPIMPORT_H
 
-
-#include <irrlicht.h>
+#include <ISkinnedMesh.h>
+#include <IMeshLoader.h>
 
 #include <assimp/scene.h>          // Output data structure
 #include <assimp/postprocess.h>    // Post processing flags
