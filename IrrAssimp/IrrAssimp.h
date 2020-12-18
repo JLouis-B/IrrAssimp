@@ -6,15 +6,14 @@
 
 #include <IMeshCache.h>
 
-class ExportFormat
+struct ExportFormat
 {
-    public:
-    irr::core::stringc FileExtension;
-    irr::core::stringc Id;
-    irr::core::stringc Description;
+    irr::core::stringc fileExtension;
+    irr::core::stringc id;
+    irr::core::stringc description;
 
-    ExportFormat(irr::core::stringc fileExtension, irr::core::stringc id, irr::core::stringc description)
-    : FileExtension(fileExtension), Id(id), Description(description) {}
+    ExportFormat(irr::core::stringc t_fileExtension, irr::core::stringc t_id, irr::core::stringc t_description)
+    : fileExtension(t_fileExtension), id(t_id), description(t_description) {}
 };
 
 class IrrAssimp
@@ -46,13 +45,12 @@ class IrrAssimp
         static irr::core::array<ExportFormat> getExportFormats();
 
     private:
-		irr::scene::ISceneManager* Smgr;
-        irr::scene::IMeshCache* Cache;
-        irr::io::IFileSystem* FileSystem;
+        irr::scene::ISceneManager* m_sceneManager;
+        irr::scene::IMeshCache* m_meshCache;
+        irr::io::IFileSystem* m_fileSystem;
 
-        IrrAssimpImport Importer;
-        IrrAssimpExport Exporter;
-
+        IrrAssimpImport m_importer;
+        IrrAssimpExport m_exporter;
 };
 
 #endif // IRRASSIMP_H
