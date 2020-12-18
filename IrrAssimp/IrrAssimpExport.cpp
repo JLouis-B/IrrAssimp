@@ -5,7 +5,7 @@
 
 using namespace irr;
 
-IrrAssimpExport::IrrAssimpExport() : AssimpScene(0)
+IrrAssimpExport::IrrAssimpExport() : m_assimpScene(0)
 {
     //ctor
 }
@@ -104,7 +104,7 @@ core::array<u16> IrrAssimpExport::getMeshesMovedByBone(const scene::ISkinnedMesh
     for (auto it = m_bonesPerMesh.begin(); it != m_bonesPerMesh.end(); it++)
     {
         core::array<const scene::ISkinnedMesh::SJoint*> bones = it->second;
-        if (bones.binary_search(joint) != -1)
+        if (bones.linear_search(joint) != -1)
         {
             buffers.push_back(it->first);
         }
@@ -124,7 +124,10 @@ aiNode* IrrAssimpExport::createNode(const scene::ISkinnedMesh::SJoint* joint)
     node->mMeshes = new unsigned int[joint->AttachedMeshes.size()];
     for (u32 i = 0; i < joint->AttachedMeshes.size(); ++i)
     {
-        node->mMeshes[i] = joint->AttachedMeshes[i];
+        const u32 attachedBuffer = joint->AttachedMeshes[i];
+        node->mMeshes[i] = attachedBuffer;
+        if (m_attachedBuffers.linear_search(attachedBuffer) == -1)
+            m_attachedBuffers.push_back(attachedBuffer);
     }
 
 
@@ -152,8 +155,8 @@ aiNode* IrrAssimpExport::createNode(const scene::ISkinnedMesh::SJoint* joint)
         bone->mOffsetMatrix = irrToAssimpMatrix(joint->GlobalMatrix).Inverse();
         bone->mNode = node;
 
-        AssimpScene->mMeshes[meshId]->mBones[AssimpScene->mMeshes[meshId]->mNumBones] = bone;
-        AssimpScene->mMeshes[meshId]->mNumBones++;
+        m_assimpScene->mMeshes[meshId]->mBones[m_assimpScene->mMeshes[meshId]->mNumBones] = bone;
+        m_assimpScene->mMeshes[meshId]->mNumBones++;
     }
 
 
@@ -171,12 +174,12 @@ void IrrAssimpExport::createAnimations(const irr::scene::ISkinnedMesh* mesh)
 {
     if (mesh->getFrameCount() == 0 || mesh->getFrameCount() == 1)
     {
-        AssimpScene->mNumAnimations = 0;
+        m_assimpScene->mNumAnimations = 0;
         return;
     }
 
-    AssimpScene->mNumAnimations = 1;
-    AssimpScene->mAnimations = new aiAnimation*[1];
+    m_assimpScene->mNumAnimations = 1;
+    m_assimpScene->mAnimations = new aiAnimation*[1];
     aiAnimation* animation = new aiAnimation();
 
     core::array<const scene::ISkinnedMesh::SJoint*> joints;
@@ -234,17 +237,17 @@ void IrrAssimpExport::createAnimations(const irr::scene::ISkinnedMesh* mesh)
         animation->mChannels[i] = channel;
     }
 
-    AssimpScene->mAnimations[0] = animation;
+    m_assimpScene->mAnimations[0] = animation;
 }
 
 void IrrAssimpExport::createMaterials(const scene::IMesh* mesh)
 {
-    AssimpScene->mNumMaterials = mesh->getMeshBufferCount();
-    AssimpScene->mMaterials = new aiMaterial*[AssimpScene->mNumMaterials];
+    m_assimpScene->mNumMaterials = mesh->getMeshBufferCount();
+    m_assimpScene->mMaterials = new aiMaterial*[m_assimpScene->mNumMaterials];
     for (unsigned int i = 0; i < mesh->getMeshBufferCount(); ++i)
     {
-        AssimpScene->mMaterials[i] = new aiMaterial();
-        AssimpScene->mMaterials[i]->mNumProperties = 0;
+        m_assimpScene->mMaterials[i] = new aiMaterial();
+        m_assimpScene->mMaterials[i]->mNumProperties = 0;
 
 
         video::SMaterial mat = mesh->getMeshBuffer(i)->getMaterial();
@@ -255,16 +258,16 @@ void IrrAssimpExport::createMaterials(const scene::IMesh* mesh)
         aiColor3D specularColor = irrToAssimpColor3(mat.SpecularColor);
         float shininess = mat.Shininess;
 
-        AssimpScene->mMaterials[i]->AddProperty(&diffuseColor, 1, AI_MATKEY_COLOR_DIFFUSE);
-        AssimpScene->mMaterials[i]->AddProperty(&ambiantColor, 1, AI_MATKEY_COLOR_AMBIENT);
-        AssimpScene->mMaterials[i]->AddProperty(&emissiveColor, 1, AI_MATKEY_COLOR_EMISSIVE);
-        AssimpScene->mMaterials[i]->AddProperty(&specularColor, 1, AI_MATKEY_COLOR_SPECULAR);
-        AssimpScene->mMaterials[i]->AddProperty(&shininess, 1, AI_MATKEY_SHININESS);
+        m_assimpScene->mMaterials[i]->AddProperty(&diffuseColor, 1, AI_MATKEY_COLOR_DIFFUSE);
+        m_assimpScene->mMaterials[i]->AddProperty(&ambiantColor, 1, AI_MATKEY_COLOR_AMBIENT);
+        m_assimpScene->mMaterials[i]->AddProperty(&emissiveColor, 1, AI_MATKEY_COLOR_EMISSIVE);
+        m_assimpScene->mMaterials[i]->AddProperty(&specularColor, 1, AI_MATKEY_COLOR_SPECULAR);
+        m_assimpScene->mMaterials[i]->AddProperty(&shininess, 1, AI_MATKEY_SHININESS);
 
         if (mat.getTexture(0))
         {
             aiString textureName = irrToAssimpPath(mat.getTexture(0)->getName().getPath());
-            AssimpScene->mMaterials[i]->AddProperty(&textureName, AI_MATKEY_TEXTURE_DIFFUSE(0));
+            m_assimpScene->mMaterials[i]->AddProperty(&textureName, AI_MATKEY_TEXTURE_DIFFUSE(0));
         }
         if (mat.getTexture(1))
         {
@@ -277,7 +280,7 @@ void IrrAssimpExport::createMaterials(const scene::IMesh* mesh)
                 || mat.MaterialType == video::EMT_PARALLAX_MAP_TRANSPARENT_VERTEX_ALPHA)
             {
                 aiString textureName = irrToAssimpPath(mat.getTexture(1)->getName().getPath());
-                AssimpScene->mMaterials[i]->AddProperty(&textureName, AI_MATKEY_TEXTURE_NORMALS(0));
+                m_assimpScene->mMaterials[i]->AddProperty(&textureName, AI_MATKEY_TEXTURE_NORMALS(0));
             }
 
         }
@@ -286,8 +289,8 @@ void IrrAssimpExport::createMaterials(const scene::IMesh* mesh)
 
 void IrrAssimpExport::createMeshes(const scene::IMesh* mesh)
 {
-    AssimpScene->mNumMeshes = mesh->getMeshBufferCount();
-    AssimpScene->mMeshes = new aiMesh*[AssimpScene->mNumMeshes];
+    m_assimpScene->mNumMeshes = mesh->getMeshBufferCount();
+    m_assimpScene->mMeshes = new aiMesh*[m_assimpScene->mNumMeshes];
     for (unsigned int i = 0; i < mesh->getMeshBufferCount(); ++i)
     {
         aiMesh* assimpMesh = new aiMesh();
@@ -365,7 +368,7 @@ void IrrAssimpExport::createMeshes(const scene::IMesh* mesh)
         assimpMesh->mNumBones = 0;
         assimpMesh->mBones = new aiBone*[m_bonesPerMesh[i].size()];
 
-        AssimpScene->mMeshes[i] = assimpMesh;
+        m_assimpScene->mMeshes[i] = assimpMesh;
     }
 }
 
@@ -380,6 +383,7 @@ void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::
 
 
         // Count some stuffs needed later
+        m_attachedBuffers.clear();
         m_bonesPerMesh.clear();
         m_weightsCountPerMeshesAndBones.clear();
         for (u32 i = 0; i < skinnedMesh->getMeshBufferCount(); ++i)
@@ -393,7 +397,7 @@ void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::
             for (u32 j = 0; j < joint->Weights.size(); ++j)
             {
                 const scene::ISkinnedMesh::SWeight& w = joint->Weights[j];
-                if (m_bonesPerMesh[w.buffer_id].binary_search(joint) == -1)
+                if (m_bonesPerMesh[w.buffer_id].linear_search(joint) == -1)
                 {
                     m_bonesPerMesh[w.buffer_id].push_back(joint);
                 }
@@ -414,13 +418,7 @@ void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::
 
     Assimp::Exporter exporter;
 
-    AssimpScene = new aiScene();
-
-    AssimpScene->mRootNode = new aiNode("IRRASSIMP_ROOT");
-	AssimpScene->mRootNode->mNumMeshes = mesh->getMeshBufferCount();
-    AssimpScene->mRootNode->mMeshes = new unsigned int[mesh->getMeshBufferCount()];
-    for (unsigned int i = 0; i < mesh->getMeshBufferCount(); ++i)
-        AssimpScene->mRootNode->mMeshes[i] = i;
+    m_assimpScene = new aiScene();
 
     // Load materials
     createMaterials(mesh);
@@ -428,24 +426,38 @@ void IrrAssimpExport::writeFile(scene::IMesh* mesh, core::stringc format, core::
     // Load meshes
     createMeshes(mesh);
 
+    m_assimpScene->mRootNode = new aiNode("IRRASSIMP_ROOT");
     if (skinnedMesh)
     {
         createAnimations(skinnedMesh);
 
         core::array<scene::ISkinnedMesh::SJoint*> roots = getRootJoints(skinnedMesh);
-        AssimpScene->mRootNode->mNumChildren = roots.size();
-        AssimpScene->mRootNode->mChildren = new aiNode*[roots.size()];
+        m_assimpScene->mRootNode->mNumChildren = roots.size();
+        m_assimpScene->mRootNode->mChildren = new aiNode*[roots.size()];
         for (u32 i = 0; i < roots.size(); ++i)
         {
-            AssimpScene->mRootNode->mChildren[i] = createNode(roots[i]);
+            m_assimpScene->mRootNode->mChildren[i] = createNode(roots[i]);
         }
 
         skinnedMesh->setHardwareSkinning(false);
     }
 
-    exporter.Export(AssimpScene, format.c_str(), filename.c_str(), aiProcess_FlipUVs);
+    const u32 attachedMeshesToRootCount = mesh->getMeshBufferCount() - m_attachedBuffers.size();
+    m_assimpScene->mRootNode->mNumMeshes = attachedMeshesToRootCount;
+    m_assimpScene->mRootNode->mMeshes = new unsigned int[attachedMeshesToRootCount];
+    u32 meshesAddedCount = 0;
+    for (u32 i = 0; i < mesh->getMeshBufferCount(); ++i)
+    {
+        if (m_attachedBuffers.linear_search(i) == -1)
+        {
+            m_assimpScene->mRootNode->mMeshes[meshesAddedCount] = i;
+            meshesAddedCount++;
+        }
+    }
+
+    exporter.Export(m_assimpScene, format.c_str(), filename.c_str(), aiProcess_FlipUVs);
 
 	// Delete the scene
-	delete AssimpScene;
+    delete m_assimpScene;
 }
 
