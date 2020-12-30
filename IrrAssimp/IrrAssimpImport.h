@@ -13,11 +13,11 @@
 class SkinnedVertex
 {
 public:
-    SkinnedVertex()
+    SkinnedVertex() :
+        moved(false),
+        position(irr::core::vector3df(0.f, 0.f, 0.f)),
+        normal(irr::core::vector3df(0.f, 0.f, 0.f))
     {
-        moved = false;
-        position = irr::core::vector3df(0.f, 0.f, 0.f);
-        normal = irr::core::vector3df(0.f, 0.f, 0.f);
     }
 
     bool moved;
