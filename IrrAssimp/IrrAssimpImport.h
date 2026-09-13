@@ -1,6 +1,7 @@
 #ifndef IRRASSIMPIMPORT_H
 #define IRRASSIMPIMPORT_H
 
+#include <IFileSystem.h>
 #include <ISkinnedMesh.h>
 #include <IMeshLoader.h>
 
